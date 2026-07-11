@@ -8,6 +8,7 @@ from app.api.router import api_router
 from app.config import get_settings
 from app.database import engine
 from app.logging_config import configure_logging
+from app.services.auth_client import auth_client
 
 settings = get_settings()
 configure_logging(settings)
@@ -20,6 +21,7 @@ async def lifespan(app: FastAPI):
     logger.info("Application startup")
     yield
     logger.info("Application shutdown")
+    await auth_client.aclose()
     await engine.dispose()
 
 
