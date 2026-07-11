@@ -1,6 +1,16 @@
-import { createContext, useCallback, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { clearTokens, getRefreshToken, setTokens } from '../api/client'
 import { apiFetch } from '../api/client'
+
+export class ConsentRequiredError extends Error {
+  groupId: string
+
+  constructor(groupId: string) {
+    super('consent_required')
+    this.name = 'ConsentRequiredError'
+    this.groupId = groupId
+  }
+}
 
 interface AuthContextType {
   user: any | null
@@ -49,7 +59,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}))
-      throw new Error(err.detail || 'Login failed')
+      // err.detail is an object for consent_required ({consent_required, application_group_id}),
+      // not a string - `new Error(err.detail)` would silently stringify it to "[object Object]".
+      if (err.detail && typeof err.detail === 'object' && err.detail.consent_required) {
+        throw new ConsentRequiredError(err.detail.application_group_id)
+      }
+      throw new Error(typeof err.detail === 'string' ? err.detail : 'Login failed')
     }
     const data = await resp.json()
     setTokens(data.access_token, data.refresh_token)
@@ -73,5 +88,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AuthContext.Provider>
   )
+}
+
+export function useAuth() {
+  return useContext(AuthContext)
 }
 
