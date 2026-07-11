@@ -1,18 +1,28 @@
 import { useState, type FormEvent } from 'react'
+import { useLocation } from 'react-router-dom'
+import { getAuthUrl } from '../api/client'
 import { ConsentRequiredError, useAuth } from '../context/AuthContext'
 import usePageMeta from '../hooks/usePageMeta'
 
 function buildConsentUrl(groupId: string) {
   const redirectUri = `${window.location.origin}/consent-callback`
-  return `https://auth.withfbraun.com/consent?group=${groupId}&redirect_uri=${encodeURIComponent(redirectUri)}`
+  return `${getAuthUrl()}/consent?group=${groupId}&redirect_uri=${encodeURIComponent(redirectUri)}`
+}
+
+function buildGoogleLoginUrl() {
+  const redirectUri = `${window.location.origin}/oauth/callback`
+  return `${getAuthUrl()}/auth/google?redirect_uri=${encodeURIComponent(redirectUri)}`
 }
 
 export default function Login() {
   usePageMeta({ title: 'Sign in', description: 'Sign in to your account.' })
   const { login } = useAuth()
+  const location = useLocation()
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(
+    (location.state as { flash?: string } | null)?.flash ?? null,
+  )
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: FormEvent) {
@@ -74,6 +84,19 @@ export default function Login() {
           {loading ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
+
+      <div className="my-4 flex items-center gap-3 text-xs uppercase tracking-wide text-slate-500">
+        <div className="h-px flex-1 bg-slate-800" />
+        or
+        <div className="h-px flex-1 bg-slate-800" />
+      </div>
+
+      <a
+        href={buildGoogleLoginUrl()}
+        className="w-full rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-center font-medium text-slate-100"
+      >
+        Continue with Google
+      </a>
     </div>
   )
 }

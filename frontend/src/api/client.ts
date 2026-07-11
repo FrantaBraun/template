@@ -1,4 +1,5 @@
 const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '')
+const AUTH_URL = (import.meta.env.VITE_AUTH_URL || 'https://auth.withfbraun.com').replace(/\/$/, '')
 
 let _access  = localStorage.getItem('access_token')  || null
 let _refresh = localStorage.getItem('refresh_token') || null
@@ -20,6 +21,7 @@ export function clearTokens() {
 export function getAccessToken()  { return _access }
 export function getRefreshToken() { return _refresh }
 export function getApiUrl()       { return BASE_URL }
+export function getAuthUrl()      { return AUTH_URL }
 
 async function doRefresh() {
   if (!_refresh) throw new Error('no_refresh')
