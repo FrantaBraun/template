@@ -1,0 +1,45 @@
+from functools import lru_cache
+from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="ignore")
+
+    # Database
+    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/template_db"
+
+    # Application
+    app_base_url: str = "http://localhost:8000"
+    frontend_url: str = "http://localhost:3000"
+    cors_enabled: bool = True
+    cors_origins: list[str] = ["http://localhost:3000"]
+
+    # Authorization (auth.withfbraun.com)
+    auth_url: str = "https://auth.withfbraun.com"
+    auth_api_key: str = ""
+
+    # Email (SMTP)
+    mail_username: str = ""
+    mail_password: str = ""
+    mail_from: str = "noreply@example.com"
+    mail_server: str = "smtp.example.com"
+    mail_port: int = 587
+    mail_starttls: bool = True
+    mail_ssl_tls: bool = False
+    mail_suppress_send: bool = False
+
+    # Logging
+    log_level: str = "INFO"
+    log_dir: str = "logs"
+    log_rotation_when: str = "midnight"
+    log_rotation_interval: int = 1
+    log_rotation_backup_count: int = 14
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
