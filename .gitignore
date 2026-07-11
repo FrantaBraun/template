@@ -1,0 +1,13 @@
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+*.pyc
+.venv/
+__pycache__/
+backend/logs/
+.claude/
+.vscode/
+scripts/build.config.toml
+scripts/deploy.config.sh

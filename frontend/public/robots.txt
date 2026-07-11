@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /my-account
+Disallow: /admin
+Disallow: /oauth/callback
+
+Sitemap: /sitemap.xml

@@ -1,0 +1,113 @@
+import { useEffect, useState } from 'react'
+import { getApiUrl } from '../api/client'
+import usePageMeta from '../hooks/usePageMeta'
+
+type VersionInfo = Record<string, unknown> & { version?: string }
+
+type FetchState = {
+  data: VersionInfo | null
+  error: string | null
+  loading: boolean
+}
+
+function parseMajorMinor(version: string | undefined) {
+  const parts = String(version ?? '').split('.')
+  return { major: parseInt(parts[0], 10) || 0, minor: parseInt(parts[1], 10) || 0 }
+}
+
+function useVersionFetch(url: string): FetchState {
+  const [state, setState] = useState<FetchState>({ data: null, error: null, loading: true })
+
+  useEffect(() => {
+    let cancelled = false
+
+    fetch(url)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((data) => {
+        if (!cancelled) setState({ data, error: null, loading: false })
+      })
+      .catch((err) => {
+        if (!cancelled) setState({ data: null, error: err?.message ?? String(err), loading: false })
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [url])
+
+  return state
+}
+
+function VersionCard({ title, state }: { title: string; state: FetchState }) {
+  const { data, error, loading } = state
+  const fields = data
+    ? Object.entries(data).filter(([, value]) => value !== null && value !== undefined && value !== '')
+    : []
+
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+      <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">{title}</h2>
+
+      {loading && <p className="text-sm text-slate-500">Loading…</p>}
+      {error && <p className="text-sm text-red-400">Failed to load: {error}</p>}
+
+      {!loading && !error && (
+        <dl className="space-y-2">
+          {fields.map(([key, value]) => (
+            <div
+              key={key}
+              className="flex items-baseline justify-between gap-4 border-b border-slate-800/60 pb-2 last:border-0 last:pb-0"
+            >
+              <dt className="text-xs uppercase tracking-wide text-slate-500">{key.replace(/_/g, ' ')}</dt>
+              <dd className="truncate text-right font-mono text-sm text-slate-100">{String(value)}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </div>
+  )
+}
+
+export default function Version() {
+  usePageMeta({ title: 'Version', description: 'Backend and frontend version information.' })
+
+  const backend = useVersionFetch(`${getApiUrl()}/api/public/version`)
+  const frontend = useVersionFetch('/version.json')
+
+  const backendVersion = backend.data?.version
+  const frontendVersion = frontend.data?.version
+  const bothLoaded = Boolean(backendVersion && frontendVersion)
+  const compatible =
+    bothLoaded &&
+    (() => {
+      const b = parseMajorMinor(backendVersion)
+      const f = parseMajorMinor(frontendVersion)
+      return b.major === f.major && b.minor === f.minor
+    })()
+
+  return (
+    <div className="mx-auto max-w-2xl px-6 py-16 text-slate-100">
+      <h1 className="mb-1 text-2xl font-semibold tracking-tight">Version</h1>
+      <p className="mb-8 text-sm text-slate-500">Diagnostic page — current build info for both services.</p>
+
+      {bothLoaded && (
+        <div
+          className={`mb-8 rounded-xl border px-4 py-3 text-sm ${
+            compatible
+              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+              : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+          }`}
+        >
+          {compatible
+            ? `Backend and frontend versions are compatible (${backendVersion} / ${frontendVersion}).`
+            : `Version mismatch: backend ${backendVersion} vs frontend ${frontendVersion}. Compatibility issues may occur.`}
+        </div>
+      )}
+
+      <div className="space-y-4">
+        <VersionCard title="Backend" state={backend} />
+        <VersionCard title="Frontend" state={frontend} />
+      </div>
+    </div>
+  )
+}

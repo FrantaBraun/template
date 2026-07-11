@@ -1,0 +1,26 @@
+# Deployment configuration — copy to deploy.config.sh and fill in your values.
+# deploy.config.sh is gitignored (contains credentials).
+
+# ── FTP ──────────────────────────────────────────────────────────────────────
+FTP_HOST="ftp.example.com"
+FTP_PORT=21
+FTP_USER="ftp-user"
+FTP_PASS="secret"
+FTP_BACKEND_PATH="/releases/backend"
+FTP_FRONTEND_PATH="/releases/frontend"
+
+# ── Application ───────────────────────────────────────────────────────────────
+INSTALL_DIR="/srv/apps/auth"        # absolute path; scripts run from here
+DOMAIN="auth.withfbraun.com"
+BACKEND_PORT=8002
+APP_USER="app-auth"
+APP_GROUP="app-services"
+APP_SERVICE_NAME="app-auth.service"
+APP_SERVICE_DESC="Authentication with FBraun"
+
+# ── nginx ─────────────────────────────────────────────────────────────────────
+NGINX_SITES_CONF="/etc/nginx/conf.d"
+
+# ── Certbot ───────────────────────────────────────────────────────────────────
+CERTBOT_DOMAINS_FILE="/srv/scripts/certbot/domains.txt"
+CERTBOT_REFRESH_SCRIPT="/srv/scripts/certbot/refresh_cert.sh"

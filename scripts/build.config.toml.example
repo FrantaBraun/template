@@ -1,0 +1,19 @@
+# Build configuration — copy to build.config.toml and fill in your values.
+# build.config.toml is gitignored (contains FTP credentials).
+
+[ftp]
+host     = "ftp.example.com"
+port     = 21
+user     = "ftp-user"
+password = "secret"
+passive  = true
+tls      = false          # set true for FTPS (FTP over TLS)
+
+[ftp.paths]
+backend  = "/releases/backend"
+frontend = "/releases/frontend"
+scripts  = "/releases/auth"
+
+[build]
+output_dir  = "dist"      # relative to repo root, or absolute
+# npm_command = "npm"     # override if npm is not on PATH
