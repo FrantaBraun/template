@@ -26,6 +26,11 @@ async def db_session() -> AsyncSession:
 
 
 @pytest.fixture()
+def auth_test_settings() -> Settings:
+    return Settings(auth_url="https://auth.test", auth_api_key="test-api-key")
+
+
+@pytest.fixture()
 def mail_test_settings() -> Settings:
     return Settings(
         mail_username="test-user",
