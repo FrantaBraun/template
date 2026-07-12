@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, func
+from sqlalchemy import DateTime, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -11,9 +11,11 @@ from app.models.base import Base
 class User(Base):
     """Local account linked to a user authenticated via auth.withfbraun.com.
 
-    Deliberately holds only the link (auth_sub) plus timestamps - identity
-    fields (email, name, role, ...) are owned by the auth service and read
-    fresh from the JWT / GET /api/auth/me, never duplicated here.
+    Identity fields (email, name, role, ...) are owned by the auth service and
+    read fresh from the JWT / GET /api/auth/me, never duplicated here - this
+    model only holds the link (auth_sub) plus data genuinely local to this
+    app. `nickname` is a deliberately minimal example of that: a template
+    extending this model adds fields here, not identity data.
     """
 
     __tablename__ = "users"
@@ -24,6 +26,7 @@ class User(Base):
     auth_sub: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), unique=True, index=True, nullable=False
     )
+    nickname: Mapped[str | None] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

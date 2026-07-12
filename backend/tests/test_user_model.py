@@ -14,6 +14,16 @@ async def test_create_user_sets_defaults(db_session):
     assert user.id is not None
     assert user.created_at is not None
     assert user.updated_at is not None
+    assert user.nickname is None
+
+
+async def test_nickname_persists(db_session):
+    user = User(auth_sub=uuid.uuid4(), nickname="Frantisek")
+    db_session.add(user)
+    await db_session.flush()
+    await db_session.refresh(user)
+
+    assert user.nickname == "Frantisek"
 
 
 async def test_auth_sub_must_be_unique(db_session):
