@@ -1,3 +1,9 @@
+/**
+ * Part of the With FBraun project template.
+ * Author: František Braun <frantisek.braun95@gmail.com>
+ * Freely available as a template for building custom applications.
+ */
+
 import { useTranslation } from 'react-i18next'
 import type { UserAttribute } from '../config/userAttributes'
 
@@ -7,6 +13,11 @@ interface Props {
   onChange: (key: string, value: unknown) => void
 }
 
+/**
+ * Renders one form field for a user-configurable attribute (from
+ * config.json, see config/userAttributes.ts), picking the input type
+ * (checkbox/number/date/text) based on `attribute.type`.
+ */
 export default function DynamicAttributeField({ attribute, value, onChange }: Props) {
   const { t } = useTranslation()
   const label = t(attribute.i18nKey)

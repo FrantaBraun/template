@@ -1,3 +1,9 @@
+/**
+ * Part of the With FBraun project template.
+ * Author: František Braun <frantisek.braun95@gmail.com>
+ * Freely available as a template for building custom applications.
+ */
+
 const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '')
 const AUTH_URL = (import.meta.env.VITE_AUTH_URL || 'https://auth.withfbraun.com').replace(/\/$/, '')
 
@@ -18,11 +24,21 @@ export function clearTokens() {
   localStorage.removeItem('refresh_token')
 }
 
+/** Returns the in-memory access token (mirrors localStorage, set at module load and via setTokens/clearTokens). */
 export function getAccessToken()  { return _access }
+/** Returns the in-memory refresh token (mirrors localStorage, set at module load and via setTokens/clearTokens). */
 export function getRefreshToken() { return _refresh }
+/** Returns this app's own backend base URL (VITE_API_URL), used for every proxied `/api/*` call. */
 export function getApiUrl()       { return BASE_URL }
+/** Returns the shared auth service's public URL (VITE_AUTH_URL) - the one place the frontend talks to it directly (e.g. the Google OAuth redirect), rather than through this backend. */
 export function getAuthUrl()      { return AUTH_URL }
 
+/**
+ * Exchanges the stored refresh token for a new access/refresh pair via this
+ * app's own `/api/auth/refresh` proxy. On failure, clears tokens and throws
+ * so the caller (apiFetch) knows the session is truly gone rather than
+ * retrying indefinitely.
+ */
 async function doRefresh() {
   if (!_refresh) throw new Error('no_refresh')
   const resp = await fetch(`${BASE_URL}/api/auth/refresh`, {
@@ -36,6 +52,14 @@ async function doRefresh() {
   return data.access_token
 }
 
+/**
+ * Fetch wrapper for all backend calls: prefixes `path` with BASE_URL,
+ * attaches the bearer token when present, and on a 401 transparently
+ * refreshes the token and retries the request exactly once. If the refresh
+ * itself fails, tokens are cleared and the browser is hard-redirected to
+ * `/login` (not a router navigate - this runs outside React and needs to
+ * work even if the component tree using it has already unmounted).
+ */
 export async function apiFetch(path: string, options: { method?: string; headers?: {Authorization?: string}, [key: string]: any } = { headers: {}, method: 'GET' }) {
   const url = `${BASE_URL}${path}`
   const headers = { 'Content-Type': 'application/json', ...options.headers }
@@ -58,6 +82,13 @@ export async function apiFetch(path: string, options: { method?: string; headers
   return resp
 }
 
+/**
+ * Decodes a JWT's payload for client-side display purposes only (e.g.
+ * reading claims to show in the UI). Does NOT verify the signature - this
+ * is purely a base64url decode, so the result must never be trusted for
+ * authorization decisions. The backend is the only party that verifies
+ * tokens (see backend `app/security/jwt.py`).
+ */
 export function decodeJwt(token: string) {
   try {
     return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))

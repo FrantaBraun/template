@@ -1,7 +1,14 @@
+/**
+ * Part of the With FBraun project template.
+ * Author: František Braun <frantisek.braun95@gmail.com>
+ * Freely available as a template for building custom applications.
+ */
+
 import { useTranslation } from 'react-i18next'
 
 const TECH_STACK = ['Vite', 'React', 'TypeScript', 'Tailwind CSS']
 
+/** Public landing page - no auth required, just a static hero and tech-stack badge list. */
 export default function HomePage() {
   const { t } = useTranslation()
 

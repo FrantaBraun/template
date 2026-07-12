@@ -1,3 +1,9 @@
+/**
+ * Part of the With FBraun project template.
+ * Author: František Braun <frantisek.braun95@gmail.com>
+ * Freely available as a template for building custom applications.
+ */
+
 import { useEffect, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -30,6 +36,13 @@ const PROFILE_FIELDS = [
   'country_code',
 ] as const
 
+/**
+ * Two independent save flows that never cross endpoints: the account card
+ * (nickname) PATCHes this backend's own local `/api/account/me` table, while
+ * the profile card (name/attributes) PATCHes the upstream auth service via
+ * `/api/auth/me` and `/api/auth/me/group-attributes/{id}`. Each has its own
+ * loading/saving/message state so one failing never blocks the other.
+ */
 export default function Account() {
   const { t } = useTranslation()
   usePageMeta({ title: t('account.pageTitle'), description: t('account.pageDescription') })

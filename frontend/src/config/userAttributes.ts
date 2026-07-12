@@ -1,6 +1,15 @@
+/**
+ * Part of the With FBraun project template.
+ * Author: František Braun <frantisek.braun95@gmail.com>
+ * Freely available as a template for building custom applications.
+ */
+
+/** Input widget kind rendered by DynamicAttributeField for a given attribute. */
 export type AttributeType = 'text' | 'number' | 'boolean' | 'date'
+/** Which storage bucket an attribute belongs to on the auth service; only 'user_data' is readable/writable by this app (see loadUserAttributes below). */
 export type AttributeBucket = 'user_data' | 'system_data'
 
+/** One user-configurable attribute as declared in public/config.json. */
 export interface UserAttribute {
   key: string
   bucket: AttributeBucket
@@ -9,6 +18,7 @@ export interface UserAttribute {
   i18nKey: string
 }
 
+/** Shape of public/config.json as consumed by loadUserAttributes. */
 interface ConfigFile {
   attributes?: UserAttribute[]
 }

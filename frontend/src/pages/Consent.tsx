@@ -1,3 +1,9 @@
+/**
+ * Part of the With FBraun project template.
+ * Author: František Braun <frantisek.braun95@gmail.com>
+ * Freely available as a template for building custom applications.
+ */
+
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -11,6 +17,12 @@ interface GroupInfo {
   scopes: string[]
 }
 
+/**
+ * This template's own consent screen (not the auth service's hosted one) -
+ * reads `?group=` / `?redirect=` set by AuthContext's redirectToConsent(),
+ * fetches scope info via group-info (API key only, no user token needed),
+ * then grants/rejects against the auth service before continuing the redirect.
+ */
 export default function Consent() {
   const { t } = useTranslation()
   usePageMeta({ title: t('consent.pageTitle'), description: t('consent.pageDescription') })
@@ -84,6 +96,7 @@ export default function Consent() {
         {group.scopes.map((scope) => (
           <li key={scope} className="flex items-center gap-2 text-sm">
             <span className="text-emerald-400">✓</span>
+            {/* Falls back to the raw scope id if no consent.scopes.<scope> translation exists yet. */}
             {t(`consent.scopes.${scope}`, scope)}
           </li>
         ))}

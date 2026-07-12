@@ -1,3 +1,9 @@
+/**
+ * Part of the With FBraun project template.
+ * Author: František Braun <frantisek.braun95@gmail.com>
+ * Freely available as a template for building custom applications.
+ */
+
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
@@ -5,11 +11,18 @@ import { getAuthUrl } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import usePageMeta from '../hooks/usePageMeta'
 
+// Redirects straight to the auth service - it owns the entire Google exchange
+// and redirects back to /oauth/callback with tokens, no backend involvement.
 function buildGoogleLoginUrl() {
   const redirectUri = `${window.location.origin}/oauth/callback`
   return `${getAuthUrl()}/auth/google?redirect_uri=${encodeURIComponent(redirectUri)}`
 }
 
+/**
+ * Email/password + Google OAuth entry point. On consent_required, login()
+ * (in AuthContext) redirects to /consent internally and returns normally
+ * rather than throwing, so the catch block below never sees that case.
+ */
 export default function Login() {
   const { t } = useTranslation()
   usePageMeta({ title: t('login.pageTitle'), description: t('login.pageDescription') })

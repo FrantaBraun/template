@@ -1,3 +1,9 @@
+/**
+ * Part of the With FBraun project template.
+ * Author: František Braun <frantisek.braun95@gmail.com>
+ * Freely available as a template for building custom applications.
+ */
+
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -5,6 +11,11 @@ import { setTokens } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import usePageMeta from '../hooks/usePageMeta'
 
+/**
+ * Landing page for the Google OAuth redirect - the auth service appends
+ * tokens (or an error) directly as query params, which are stored and then
+ * exchanged for a user profile via loadUser().
+ */
 export default function OAuthCallback() {
   const { t } = useTranslation()
   usePageMeta({ title: t('oauthCallback.pageTitle') })
@@ -14,6 +25,8 @@ export default function OAuthCallback() {
   const ran = useRef(false)
 
   useEffect(() => {
+    // StrictMode/dev double-invokes effects; without this guard the token
+    // query params would be consumed and processed twice.
     if (ran.current) return
     ran.current = true
 

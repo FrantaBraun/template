@@ -1,7 +1,22 @@
+/**
+ * Part of the With FBraun project template.
+ * Author: František Braun <frantisek.braun95@gmail.com>
+ * Freely available as a template for building custom applications.
+ */
+
 import { useEffect } from 'react'
 
 const SITE = 'Authenticate WFB'
 
+/**
+ * Sets the document title (suffixed with the site name), the
+ * `<meta name="description">` tag, and matching Open Graph tags
+ * (`og:title` / `og:description`) for the current page. Falling back to
+ * shared defaults when a page doesn't pass its own title/description keeps
+ * every route social-share-ready without each page having to opt in.
+ * Meta elements are created once and reused (queried by selector) rather
+ * than duplicated on every navigation.
+ */
 export default function usePageMeta({ title, description }: { title?: string; description?: string } = {}) {
   useEffect(() => {
     document.title = title ? `${title} — ${SITE}` : SITE

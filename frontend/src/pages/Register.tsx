@@ -1,9 +1,19 @@
+/**
+ * Part of the With FBraun project template.
+ * Author: František Braun <frantisek.braun95@gmail.com>
+ * Freely available as a template for building custom applications.
+ */
+
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { apiFetch } from '../api/client'
 import usePageMeta from '../hooks/usePageMeta'
 
+/**
+ * Account creation form. Registration alone issues no tokens - on success the
+ * user is shown a confirmation and must log in separately afterward.
+ */
 export default function Register() {
   const { t, i18n } = useTranslation()
   usePageMeta({ title: t('register.pageTitle'), description: t('register.pageDescription') })

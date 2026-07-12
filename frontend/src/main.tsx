@@ -1,3 +1,11 @@
+/**
+ * Part of the With FBraun project template.
+ * Author: František Braun <frantisek.braun95@gmail.com>
+ * Freely available as a template for building custom applications.
+ */
+
+// Application entry point: mounts the React tree, wiring the router and
+// AuthProvider around App so every page can access routing and auth state.
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'

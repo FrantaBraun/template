@@ -1,3 +1,9 @@
+/**
+ * Part of the With FBraun project template.
+ * Author: František Braun <frantisek.braun95@gmail.com>
+ * Freely available as a template for building custom applications.
+ */
+
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { clearTokens, getRefreshToken, setTokens } from '../api/client'
@@ -21,8 +27,12 @@ const AuthContext = createContext<AuthContextType>({
   loadUser: async () => false,
 })
 
-// err.detail is an object for consent_required ({consent_required, application_group_id}),
-// not a string - `new Error(err.detail)` would silently stringify it to "[object Object]".
+/**
+ * Pulls the application_group_id out of a 403 error body when it represents
+ * a consent_required response, or null otherwise.
+ * err.detail is an object for consent_required ({consent_required, application_group_id}),
+ * not a string - `new Error(err.detail)` would silently stringify it to "[object Object]".
+ */
 function extractConsentGroupId(body: any): string | null {
   const detail = body?.detail
   if (detail && typeof detail === 'object' && detail.consent_required) {
@@ -31,6 +41,7 @@ function extractConsentGroupId(body: any): string | null {
   return null
 }
 
+/** Provides auth state (user, loading) and actions (login, logout, loadUser) to the component tree. */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser]       = useState(null)
   const [loading, setLoading] = useState(true)
@@ -113,6 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
+/** Reads the current AuthContextType (user, loading, login/logout/loadUser) from the nearest AuthProvider. */
 export function useAuth() {
   return useContext(AuthContext)
 }

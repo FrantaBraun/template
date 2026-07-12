@@ -1,3 +1,11 @@
+/**
+ * Part of the With FBraun project template.
+ * Author: František Braun <frantisek.braun95@gmail.com>
+ * Freely available as a template for building custom applications.
+ */
+
+// Top-level route table: wraps every page in the shared Layout (nav + chrome)
+// and declares the app's client-side routes.
 import { Route, Routes } from "react-router-dom"
 import HomePage from "./pages/HomePage"
 import Layout from "./components/Layout"
@@ -22,7 +30,6 @@ function App() {
       <Route path="/consent-rejected" element={<ConsentRejected />} />
       {/* Publicly accessible, hidden from regular nav */}
       <Route path="/version" element={<Version />} />
-      <Route path="/consent-callback" element={<Version />} />
     </Routes>
 
   </Layout>

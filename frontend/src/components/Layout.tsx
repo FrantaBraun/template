@@ -1,9 +1,16 @@
+/**
+ * Part of the With FBraun project template.
+ * Author: František Braun <frantisek.braun95@gmail.com>
+ * Freely available as a template for building custom applications.
+ */
+
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const LANGUAGES = ['cs', 'en'] as const
 
+/** Small control to switch the active i18next language between the supported locales. */
 function LanguageSwitcher() {
   const { i18n } = useTranslation()
 
@@ -24,6 +31,7 @@ function LanguageSwitcher() {
   )
 }
 
+/** Top navigation bar: brand link plus auth-aware links (account/logout when signed in, login/register otherwise). */
 function Nav() {
   const { t } = useTranslation()
   const { user, logout } = useAuth()
@@ -62,6 +70,7 @@ function Nav() {
   )
 }
 
+/** Page chrome shared by every route: renders Nav above the routed page content. */
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <>

@@ -1,3 +1,9 @@
+/**
+ * Part of the With FBraun project template.
+ * Author: František Braun <frantisek.braun95@gmail.com>
+ * Freely available as a template for building custom applications.
+ */
+
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getApiUrl } from '../api/client'
@@ -11,11 +17,14 @@ type FetchState = {
   loading: boolean
 }
 
+// Only major.minor are compared for compatibility - patch-level drift between
+// backend/frontend is expected since they release independently (see build.py).
 function parseMajorMinor(version: string | undefined) {
   const parts = String(version ?? '').split('.')
   return { major: parseInt(parts[0], 10) || 0, minor: parseInt(parts[1], 10) || 0 }
 }
 
+// Shared fetch/loading/error state for both the backend and frontend version.json calls below.
 function useVersionFetch(url: string): FetchState {
   const [state, setState] = useState<FetchState>({ data: null, error: null, loading: true })
 
@@ -39,6 +48,8 @@ function useVersionFetch(url: string): FetchState {
   return state
 }
 
+// Renders whatever fields the version.json/endpoint happens to contain, in
+// whatever order Object.entries yields them - not tied to a fixed schema.
 function VersionCard({ title, state }: { title: string; state: FetchState }) {
   const { t } = useTranslation()
   const { data, error, loading } = state
@@ -74,6 +85,11 @@ function VersionCard({ title, state }: { title: string; state: FetchState }) {
   )
 }
 
+/**
+ * Diagnostics page comparing this backend's /api/public/version against the
+ * frontend's own bundled /version.json, flagging a mismatch when their
+ * major.minor versions differ (the two are versioned/deployed independently).
+ */
 export default function Version() {
   const { t } = useTranslation()
   usePageMeta({ title: t('version.pageTitle'), description: t('version.pageDescription') })
