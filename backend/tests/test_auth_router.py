@@ -141,6 +141,30 @@ async def _me_request(db_session, make_access_token, sub: str | None = None):
 async def test_me_creates_local_user_and_returns_upstream_profile(
     db_session, make_access_token, rsa_keypair, monkeypatch
 ):
+    """Verified directly against the real service: once consent is granted,
+    /me returns the flat profile with no wrapper at all - not
+    {consent_required: false, ..., user: {...}} as originally assumed."""
+    _, public_pem = rsa_keypair
+    monkeypatch.setattr("app.security.jwt._public_key", public_pem)
+    sub = str(uuid.uuid4())
+
+    respx.get(f"{AUTH_URL}/api/auth/me").mock(
+        return_value=Response(200, json={"id": sub, "login": "alogin", "email": "a@example.com"})
+    )
+
+    resp = await _me_request(db_session, make_access_token, sub=sub)
+
+    assert resp.status_code == 200
+    assert resp.json()["login"] == "alogin"
+
+
+@respx.mock
+async def test_me_wrapper_shape_with_user_populated_also_handled(
+    db_session, make_access_token, rsa_keypair, monkeypatch
+):
+    """Defensive: if the upstream ever does wrap a granted response as
+    {consent_required: false, user: {...}}, unwrap it rather than return the
+    wrapper itself."""
     _, public_pem = rsa_keypair
     monkeypatch.setattr("app.security.jwt._public_key", public_pem)
     sub = str(uuid.uuid4())

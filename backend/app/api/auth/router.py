@@ -67,11 +67,14 @@ async def me(
     live profile from the auth service - not cached locally, so it's always
     current and never duplicates identity data this app doesn't own.
 
-    Upstream /me now always responds 200 with
-    {consent_required, application_group_id, user}. We convert
-    consent_required into the same 403 shape /login already uses, so the
-    frontend has one code path for both (this is the check that also covers
-    entry points that skip /login's own check, e.g. Google OAuth)."""
+    Upstream /me has two real response shapes (verified directly, not just
+    from docs): when consent is missing, 200 with
+    {consent_required: true, application_group_id, user: null} - we convert
+    that into the same 403 shape /login already uses, so the frontend has one
+    code path for both (this also covers entry points that skip /login's own
+    check, e.g. Google OAuth). When consent is already granted, it's just the
+    flat profile with no wrapper at all - not {consent_required: false, ...,
+    user: {...}} as originally assumed."""
     try:
         result = await auth_client.get_me(access_token=credentials.credentials)
     except httpx.HTTPStatusError as exc:
@@ -85,7 +88,7 @@ async def me(
                 "application_group_id": result.get("application_group_id"),
             },
         )
-    return result["user"]
+    return result.get("user") or result
 
 
 @router.get("/group-info")
