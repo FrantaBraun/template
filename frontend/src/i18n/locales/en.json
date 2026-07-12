@@ -1,0 +1,122 @@
+{
+  "common": {
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "loading": "Loading…",
+    "error": "Something went wrong. Please try again.",
+    "requiredFieldsMissing": "Please fill in all required fields.",
+    "logout": "Log out",
+    "login": "Sign in",
+    "register": "Register",
+    "account": "Account",
+    "home": "Home"
+  },
+  "home": {
+    "title": "Project template",
+    "description": "This is a default template for building further applications. It contains no functional logic — just a ready-made environment to start building on."
+  },
+  "login": {
+    "pageTitle": "Sign in",
+    "pageDescription": "Sign in to your account.",
+    "title": "Sign in",
+    "identifierLabel": "Email or username",
+    "passwordLabel": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "or": "or",
+    "google": "Continue with Google",
+    "noAccount": "Don't have an account?",
+    "registerLink": "Register",
+    "failed": "Login failed"
+  },
+  "register": {
+    "pageTitle": "Register",
+    "pageDescription": "Create a new account.",
+    "title": "Register",
+    "emailLabel": "Email",
+    "loginLabel": "Username",
+    "passwordLabel": "Password",
+    "firstNameLabel": "First name",
+    "lastNameLabel": "Last name",
+    "submit": "Register",
+    "submitting": "Registering…",
+    "successTitle": "Registration successful",
+    "successMessage": "We've sent a verification link to your email. You can now sign in.",
+    "loginLink": "Go to sign in",
+    "haveAccount": "Already have an account?",
+    "failed": "Registration failed"
+  },
+  "account": {
+    "pageTitle": "Account",
+    "pageDescription": "Manage your account details.",
+    "accountCard": {
+      "title": "Account",
+      "nicknameLabel": "Nickname"
+    },
+    "profileCard": {
+      "title": "Profile",
+      "firstNameLabel": "First name",
+      "lastNameLabel": "Last name",
+      "avatarUrlLabel": "Avatar URL",
+      "languageCodeLabel": "Language code",
+      "birthDateLabel": "Birth date",
+      "countryCodeLabel": "Country code"
+    },
+    "attributes": {
+      "newsletterOptIn": "Newsletter subscription",
+      "companyName": "Company name",
+      "internalRiskScore": "Internal risk score"
+    },
+    "saveSuccess": "Saved.",
+    "saveError": "Save failed.",
+    "redirecting": "Redirecting to sign in…"
+  },
+  "consent": {
+    "pageTitle": "Grant access",
+    "pageDescription": "Grant or deny access to your data.",
+    "title": "Grant access",
+    "requestedBy": "is requesting access to the following data from your account.",
+    "grant": "Grant",
+    "reject": "Deny",
+    "missingGroupId": "Missing application group identifier.",
+    "loadError": "Failed to load application information.",
+    "notFound": "Application could not be found.",
+    "actionError": "Failed to complete the action. Please try again.",
+    "scopes": {
+      "email": "Email address",
+      "first_name": "First name",
+      "last_name": "Last name",
+      "avatar_url": "Avatar",
+      "birth_date": "Birth date",
+      "language_code": "Language preference",
+      "country_code": "Country"
+    }
+  },
+  "consentRejected": {
+    "pageTitle": "Access denied",
+    "title": "Access denied",
+    "message": "Without granting access to data within this application, you won't have full access to the template. If this was a mistake, you can <link>sign in again</link> and grant access."
+  },
+  "oauthCallback": {
+    "pageTitle": "Signing in…",
+    "signingIn": "Signing in…",
+    "profileLoadError": "Signed in, but loading your profile failed.",
+    "googleFailed": "Google sign-in failed. Please try again."
+  },
+  "version": {
+    "pageTitle": "Version",
+    "pageDescription": "Backend and frontend version information.",
+    "title": "Version",
+    "subtitle": "Diagnostic page — current build info for both services.",
+    "backend": "Backend",
+    "frontend": "Frontend",
+    "loading": "Loading…",
+    "loadFailed": "Failed to load",
+    "compatible": "Backend and frontend versions are compatible ({{backend}} / {{frontend}}).",
+    "mismatch": "Version mismatch: backend {{backend}} vs frontend {{frontend}}. Compatibility issues may occur."
+  },
+  "nav": {
+    "brand": "Template"
+  }
+}

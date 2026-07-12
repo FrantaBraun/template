@@ -1,0 +1,122 @@
+{
+  "common": {
+    "save": "Uložit",
+    "saving": "Ukládání…",
+    "cancel": "Zrušit",
+    "loading": "Načítání…",
+    "error": "Něco se pokazilo. Zkuste to prosím znovu.",
+    "requiredFieldsMissing": "Vyplňte prosím všechna povinná pole.",
+    "logout": "Odhlásit se",
+    "login": "Přihlásit se",
+    "register": "Registrace",
+    "account": "Účet",
+    "home": "Domů"
+  },
+  "home": {
+    "title": "Šablona projektu",
+    "description": "Toto je výchozí šablona pro tvorbu dalších aplikací. Neobsahuje žádnou funkční logiku — jen předpřipravené prostředí, na kterém lze začít stavět."
+  },
+  "login": {
+    "pageTitle": "Přihlášení",
+    "pageDescription": "Přihlaste se ke svému účtu.",
+    "title": "Přihlášení",
+    "identifierLabel": "E-mail nebo uživatelské jméno",
+    "passwordLabel": "Heslo",
+    "submit": "Přihlásit se",
+    "submitting": "Přihlašování…",
+    "or": "nebo",
+    "google": "Pokračovat přes Google",
+    "noAccount": "Nemáte účet?",
+    "registerLink": "Zaregistrujte se",
+    "failed": "Přihlášení se nezdařilo"
+  },
+  "register": {
+    "pageTitle": "Registrace",
+    "pageDescription": "Vytvořte si nový účet.",
+    "title": "Registrace",
+    "emailLabel": "E-mail",
+    "loginLabel": "Uživatelské jméno",
+    "passwordLabel": "Heslo",
+    "firstNameLabel": "Křestní jméno",
+    "lastNameLabel": "Příjmení",
+    "submit": "Zaregistrovat se",
+    "submitting": "Registrace…",
+    "successTitle": "Registrace proběhla úspěšně",
+    "successMessage": "Na váš e-mail jsme odeslali ověřovací odkaz. Nyní se můžete přihlásit.",
+    "loginLink": "Přejít na přihlášení",
+    "haveAccount": "Už máte účet?",
+    "failed": "Registrace se nezdařila"
+  },
+  "account": {
+    "pageTitle": "Účet",
+    "pageDescription": "Spravujte údaje svého účtu.",
+    "accountCard": {
+      "title": "Účet",
+      "nicknameLabel": "Přezdívka"
+    },
+    "profileCard": {
+      "title": "Profil",
+      "firstNameLabel": "Křestní jméno",
+      "lastNameLabel": "Příjmení",
+      "avatarUrlLabel": "URL profilového obrázku",
+      "languageCodeLabel": "Kód jazyka",
+      "birthDateLabel": "Datum narození",
+      "countryCodeLabel": "Kód země"
+    },
+    "attributes": {
+      "newsletterOptIn": "Odběr novinek",
+      "companyName": "Název společnosti",
+      "internalRiskScore": "Interní rizikové skóre"
+    },
+    "saveSuccess": "Uloženo.",
+    "saveError": "Uložení se nezdařilo.",
+    "redirecting": "Přesměrování na přihlášení…"
+  },
+  "consent": {
+    "pageTitle": "Povolení přístupu",
+    "pageDescription": "Povolte nebo odmítněte přístup k vašim údajům.",
+    "title": "Povolení přístupu",
+    "requestedBy": "žádá o přístup k následujícím údajům z vašeho účtu.",
+    "grant": "Povolit",
+    "reject": "Odmítnout",
+    "missingGroupId": "Chybí identifikátor skupiny aplikace.",
+    "loadError": "Nepodařilo se načíst informace o aplikaci.",
+    "notFound": "Aplikaci se nepodařilo najít.",
+    "actionError": "Akci se nepodařilo dokončit. Zkuste to prosím znovu.",
+    "scopes": {
+      "email": "E-mailová adresa",
+      "first_name": "Křestní jméno",
+      "last_name": "Příjmení",
+      "avatar_url": "Profilový obrázek",
+      "birth_date": "Datum narození",
+      "language_code": "Jazykové preference",
+      "country_code": "Země"
+    }
+  },
+  "consentRejected": {
+    "pageTitle": "Přístup odepřen",
+    "title": "Přístup odepřen",
+    "message": "Bez povolení přístupu k údajům v rámci této aplikace nemáte plnohodnotný přístup do šablony. Pokud jste se rozhodli omylem, můžete se <link>přihlásit znovu</link> a povolení udělit."
+  },
+  "oauthCallback": {
+    "pageTitle": "Přihlašování…",
+    "signingIn": "Přihlašování…",
+    "profileLoadError": "Přihlášení proběhlo, ale načtení profilu selhalo.",
+    "googleFailed": "Přihlášení přes Google selhalo. Zkuste to prosím znovu."
+  },
+  "version": {
+    "pageTitle": "Verze",
+    "pageDescription": "Informace o verzi backendu a frontendu.",
+    "title": "Verze",
+    "subtitle": "Diagnostická stránka — aktuální informace o buildu obou služeb.",
+    "backend": "Backend",
+    "frontend": "Frontend",
+    "loading": "Načítání…",
+    "loadFailed": "Načtení selhalo",
+    "compatible": "Backend a frontend verze jsou kompatibilní ({{backend}} / {{frontend}}).",
+    "mismatch": "Nesoulad verzí: backend {{backend}} vs frontend {{frontend}}. Mohou nastat problémy s kompatibilitou."
+  },
+  "nav": {
+    "brand": "Šablona"
+  }
+}

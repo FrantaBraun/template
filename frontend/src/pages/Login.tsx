@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { Link, useLocation } from 'react-router-dom'
 import { getAuthUrl } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import usePageMeta from '../hooks/usePageMeta'
@@ -10,7 +11,8 @@ function buildGoogleLoginUrl() {
 }
 
 export default function Login() {
-  usePageMeta({ title: 'Sign in', description: 'Sign in to your account.' })
+  const { t } = useTranslation()
+  usePageMeta({ title: t('login.pageTitle'), description: t('login.pageDescription') })
   const { login } = useAuth()
   const location = useLocation()
   const [identifier, setIdentifier] = useState('')
@@ -29,19 +31,19 @@ export default function Login() {
       // On consent_required, login() already redirected to /consent - it
       // returns normally rather than throwing, so nothing more to do here.
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed')
+      setError(err instanceof Error ? err.message : t('login.failed'))
       setLoading(false)
     }
   }
 
   return (
     <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6 text-slate-100">
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight">Sign in</h1>
+      <h1 className="mb-6 text-2xl font-semibold tracking-tight">{t('login.title')}</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="identifier" className="mb-1 block text-sm text-slate-400">
-            Email or username
+            {t('login.identifierLabel')}
           </label>
           <input
             id="identifier"
@@ -55,7 +57,7 @@ export default function Login() {
 
         <div>
           <label htmlFor="password" className="mb-1 block text-sm text-slate-400">
-            Password
+            {t('login.passwordLabel')}
           </label>
           <input
             id="password"
@@ -74,13 +76,13 @@ export default function Login() {
           disabled={loading}
           className="w-full rounded-lg bg-slate-100 px-4 py-2 font-medium text-slate-900 disabled:opacity-50"
         >
-          {loading ? 'Signing in…' : 'Sign in'}
+          {loading ? t('login.submitting') : t('login.submit')}
         </button>
       </form>
 
       <div className="my-4 flex items-center gap-3 text-xs uppercase tracking-wide text-slate-500">
         <div className="h-px flex-1 bg-slate-800" />
-        or
+        {t('login.or')}
         <div className="h-px flex-1 bg-slate-800" />
       </div>
 
@@ -88,8 +90,15 @@ export default function Login() {
         href={buildGoogleLoginUrl()}
         className="w-full rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-center font-medium text-slate-100"
       >
-        Continue with Google
+        {t('login.google')}
       </a>
+
+      <p className="mt-6 text-center text-sm text-slate-400">
+        {t('login.noAccount')}{' '}
+        <Link to="/register" className="text-slate-100 underline">
+          {t('login.registerLink')}
+        </Link>
+      </p>
     </div>
   )
 }
