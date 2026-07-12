@@ -38,6 +38,17 @@ const PROFILE_FIELDS = [
 ] as const
 
 /**
+ * Controlled text/date inputs store an unset field as '' since React inputs
+ * can't hold null - but the auth service validates fields like birth_date as
+ * a real date-or-absent and rejects "" outright. Convert blanks to null right
+ * before sending, so an untouched field is omitted upstream instead of
+ * erroring.
+ */
+function blankToNull(form: Record<string, string>): Record<string, string | null> {
+  return Object.fromEntries(Object.entries(form).map(([key, value]) => [key, value === '' ? null : value]))
+}
+
+/**
  * Two independent save flows that never cross endpoints: the account card
  * (nickname) PATCHes this backend's own local `/api/account/me` table, while
  * the profile card (name/attributes) PATCHes the upstream auth service via
@@ -147,7 +158,7 @@ export default function Account() {
     try {
       const profileResp = await apiFetch('/api/auth/me', {
         method: 'PATCH',
-        body: JSON.stringify(profileForm),
+        body: JSON.stringify(blankToNull(profileForm)),
       })
       if (!profileResp.ok) throw new Error()
       const updatedProfile: ProfileData = await profileResp.json()
