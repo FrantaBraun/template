@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { getApiUrl } from '../api/client'
 import usePageMeta from '../hooks/usePageMeta'
 
@@ -39,6 +40,7 @@ function useVersionFetch(url: string): FetchState {
 }
 
 function VersionCard({ title, state }: { title: string; state: FetchState }) {
+  const { t } = useTranslation()
   const { data, error, loading } = state
   const fields = data
     ? Object.entries(data).filter(([, value]) => value !== null && value !== undefined && value !== '')
@@ -48,8 +50,12 @@ function VersionCard({ title, state }: { title: string; state: FetchState }) {
     <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
       <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">{title}</h2>
 
-      {loading && <p className="text-sm text-slate-500">Loading…</p>}
-      {error && <p className="text-sm text-red-400">Failed to load: {error}</p>}
+      {loading && <p className="text-sm text-slate-500">{t('version.loading')}</p>}
+      {error && (
+        <p className="text-sm text-red-400">
+          {t('version.loadFailed')}: {error}
+        </p>
+      )}
 
       {!loading && !error && (
         <dl className="space-y-2">
@@ -69,7 +75,8 @@ function VersionCard({ title, state }: { title: string; state: FetchState }) {
 }
 
 export default function Version() {
-  usePageMeta({ title: 'Version', description: 'Backend and frontend version information.' })
+  const { t } = useTranslation()
+  usePageMeta({ title: t('version.pageTitle'), description: t('version.pageDescription') })
 
   const backend = useVersionFetch(`${getApiUrl()}/api/public/version`)
   const frontend = useVersionFetch('/version.json')
@@ -87,8 +94,8 @@ export default function Version() {
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-16 text-slate-100">
-      <h1 className="mb-1 text-2xl font-semibold tracking-tight">Version</h1>
-      <p className="mb-8 text-sm text-slate-500">Diagnostic page — current build info for both services.</p>
+      <h1 className="mb-1 text-2xl font-semibold tracking-tight">{t('version.title')}</h1>
+      <p className="mb-8 text-sm text-slate-500">{t('version.subtitle')}</p>
 
       {bothLoaded && (
         <div
@@ -99,14 +106,14 @@ export default function Version() {
           }`}
         >
           {compatible
-            ? `Backend and frontend versions are compatible (${backendVersion} / ${frontendVersion}).`
-            : `Version mismatch: backend ${backendVersion} vs frontend ${frontendVersion}. Compatibility issues may occur.`}
+            ? t('version.compatible', { backend: backendVersion, frontend: frontendVersion })
+            : t('version.mismatch', { backend: backendVersion, frontend: frontendVersion })}
         </div>
       )}
 
       <div className="space-y-4">
-        <VersionCard title="Backend" state={backend} />
-        <VersionCard title="Frontend" state={frontend} />
+        <VersionCard title={t('version.backend')} state={backend} />
+        <VersionCard title={t('version.frontend')} state={frontend} />
       </div>
     </div>
   )
