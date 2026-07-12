@@ -9,7 +9,7 @@ interface AuthContextType {
   login: (identifier: string, password: string) => Promise<void>
   logout: () => Promise<void>
   setUser: (user: any) => void
-  loadUser: () => Promise<void>
+  loadUser: () => Promise<boolean>
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -18,7 +18,7 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => {},
   logout: async () => {},
   setUser: () => {},
-  loadUser: async () => {},
+  loadUser: async () => false,
 })
 
 // err.detail is an object for consent_required ({consent_required, application_group_id}),
@@ -44,11 +44,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [navigate],
   )
 
-  const loadUser = useCallback(async () => {
+  const loadUser = useCallback(async (): Promise<boolean> => {
     const resp = await apiFetch('/api/auth/me').catch(() => null)
     if (resp?.ok) {
       setUser(await resp.json())
-      return
+      return true
     }
     if (resp?.status === 403) {
       const groupId = extractConsentGroupId(await resp.json().catch(() => ({})))
@@ -56,11 +56,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // The user IS validly authenticated, just missing consent - keep
         // their tokens so retrying /me after granting succeeds immediately.
         redirectToConsent(groupId)
-        return
+        return false
       }
     }
     clearTokens()
     setUser(null)
+    return false
   }, [redirectToConsent])
 
   useEffect(() => {
@@ -87,7 +88,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     const data = await resp.json()
     setTokens(data.access_token, data.refresh_token)
-    await loadUser()
+    const loaded = await loadUser()
+    if (loaded) {
+      navigate('/', { replace: true })
+    }
   }
 
   async function logout() {

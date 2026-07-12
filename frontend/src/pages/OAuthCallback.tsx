@@ -27,7 +27,11 @@ export default function OAuthCallback() {
 
     setTokens(accessToken, refreshToken)
     loadUser()
-      .then(() => navigate('/', { replace: true }))
+      .then((loaded) => {
+        // If consent was required, loadUser() already redirected to
+        // /consent internally - navigating to '/' here too would cancel it.
+        if (loaded) navigate('/', { replace: true })
+      })
       .catch(() => setError('Signed in, but loading your profile failed.'))
   }, [navigate, loadUser])
 
