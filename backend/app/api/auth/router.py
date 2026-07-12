@@ -32,7 +32,7 @@ async def register(body: RegisterRequest) -> dict:
 @router.post("/login")
 async def login(body: LoginRequest) -> dict:
     """Proxies the upstream response as-is - including a 403 consent_required,
-    since only the auth service's own hosted /consent page can resolve it."""
+    so the frontend can redirect to our own /consent page."""
     response = await auth_client.login(identifier=body.identifier, password=body.password)
     if response.status_code == 200:
         return response.json()
@@ -65,8 +65,56 @@ async def me(
 ) -> dict:
     """Ensures a local user row exists (via get_current_user) and returns the
     live profile from the auth service - not cached locally, so it's always
-    current and never duplicates identity data this app doesn't own."""
+    current and never duplicates identity data this app doesn't own.
+
+    Upstream /me now always responds 200 with
+    {consent_required, application_group_id, user}. We convert
+    consent_required into the same 403 shape /login already uses, so the
+    frontend has one code path for both (this is the check that also covers
+    entry points that skip /login's own check, e.g. Google OAuth)."""
     try:
-        return await auth_client.get_me(access_token=credentials.credentials)
+        result = await auth_client.get_me(access_token=credentials.credentials)
+    except httpx.HTTPStatusError as exc:
+        _raise_for_response(exc.response)
+
+    if result.get("consent_required"):
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "consent_required": True,
+                "application_group_id": result.get("application_group_id"),
+            },
+        )
+    return result["user"]
+
+
+@router.get("/group-info")
+async def group_info() -> dict:
+    """{id, name, description, scopes} for the group identified by our own
+    X-Api-Key - needs no user token, used to render the consent page."""
+    try:
+        return await auth_client.get_group_info()
+    except httpx.HTTPStatusError as exc:
+        _raise_for_response(exc.response)
+
+
+@router.post("/consent/{group_id}/grant", status_code=204)
+async def grant_consent(
+    group_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> None:
+    try:
+        await auth_client.grant_consent(group_id=group_id, access_token=credentials.credentials)
+    except httpx.HTTPStatusError as exc:
+        _raise_for_response(exc.response)
+
+
+@router.post("/consent/{group_id}/reject", status_code=204)
+async def reject_consent(
+    group_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> None:
+    try:
+        await auth_client.reject_consent(group_id=group_id, access_token=credentials.credentials)
     except httpx.HTTPStatusError as exc:
         _raise_for_response(exc.response)

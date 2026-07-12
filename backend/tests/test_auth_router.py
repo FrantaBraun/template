@@ -118,32 +118,102 @@ def test_me_requires_bearer(client):
     assert resp.status_code in (401, 403)
 
 
-@respx.mock
-async def test_me_creates_local_user_and_returns_upstream_profile(
-    db_session, make_access_token, rsa_keypair, monkeypatch
-):
+async def _me_request(db_session, make_access_token, sub: str | None = None):
     # TestClient drives the app from a separate thread with its own event
     # loop, which conflicts with db_session's connection (bound to this
     # test's loop). An in-process ASGI transport keeps everything on one loop.
     from app.database import get_db
     from app.main import app as fastapi_app
 
-    _, public_pem = rsa_keypair
-    monkeypatch.setattr("app.security.jwt._public_key", public_pem)
-    sub = str(uuid.uuid4())
+    sub = sub or str(uuid.uuid4())
     token = make_access_token(sub=sub)
-
-    respx.get(f"{AUTH_URL}/api/auth/me").mock(
-        return_value=Response(200, json={"id": sub, "login": "alogin", "email": "a@example.com"})
-    )
 
     fastapi_app.dependency_overrides[get_db] = lambda: db_session
     try:
         transport = ASGITransport(app=fastapi_app)
         async with AsyncClient(transport=transport, base_url="http://test") as ac:
-            resp = await ac.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
+            return await ac.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
     finally:
         fastapi_app.dependency_overrides.pop(get_db, None)
 
+
+@respx.mock
+async def test_me_creates_local_user_and_returns_upstream_profile(
+    db_session, make_access_token, rsa_keypair, monkeypatch
+):
+    _, public_pem = rsa_keypair
+    monkeypatch.setattr("app.security.jwt._public_key", public_pem)
+    sub = str(uuid.uuid4())
+
+    respx.get(f"{AUTH_URL}/api/auth/me").mock(
+        return_value=Response(
+            200,
+            json={
+                "consent_required": False,
+                "application_group_id": "g1",
+                "user": {"id": sub, "login": "alogin", "email": "a@example.com"},
+            },
+        )
+    )
+
+    resp = await _me_request(db_session, make_access_token, sub=sub)
+
     assert resp.status_code == 200
     assert resp.json()["login"] == "alogin"
+
+
+@respx.mock
+async def test_me_consent_required_returns_403(db_session, make_access_token, rsa_keypair, monkeypatch):
+    _, public_pem = rsa_keypair
+    monkeypatch.setattr("app.security.jwt._public_key", public_pem)
+
+    respx.get(f"{AUTH_URL}/api/auth/me").mock(
+        return_value=Response(
+            200,
+            json={"consent_required": True, "application_group_id": "g1", "user": None},
+        )
+    )
+
+    resp = await _me_request(db_session, make_access_token)
+
+    assert resp.status_code == 403
+    assert resp.json()["detail"]["consent_required"] is True
+    assert resp.json()["detail"]["application_group_id"] == "g1"
+
+
+@respx.mock
+def test_group_info_proxies_upstream(client):
+    respx.get(f"{AUTH_URL}/api/auth/group-info").mock(
+        return_value=Response(
+            200,
+            json={"id": "g1", "name": "My App", "description": "...", "scopes": ["email"]},
+        )
+    )
+
+    resp = client.get("/api/auth/group-info")
+
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "My App"
+
+
+@respx.mock
+def test_grant_consent_success(client):
+    respx.post(f"{AUTH_URL}/api/auth/consent/g1/grant").mock(return_value=Response(204))
+
+    resp = client.post("/api/auth/consent/g1/grant", headers={"Authorization": "Bearer token"})
+
+    assert resp.status_code == 204
+
+
+@respx.mock
+def test_reject_consent_success(client):
+    respx.post(f"{AUTH_URL}/api/auth/consent/g1/reject").mock(return_value=Response(204))
+
+    resp = client.post("/api/auth/consent/g1/reject", headers={"Authorization": "Bearer token"})
+
+    assert resp.status_code == 204
+
+
+def test_grant_consent_requires_bearer(client):
+    resp = client.post("/api/auth/consent/g1/grant")
+    assert resp.status_code in (401, 403)
