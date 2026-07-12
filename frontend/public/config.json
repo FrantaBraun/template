@@ -1,0 +1,25 @@
+{
+  "attributes": [
+    {
+      "key": "newsletter_opt_in",
+      "bucket": "user_data",
+      "type": "boolean",
+      "required": false,
+      "i18nKey": "account.attributes.newsletterOptIn"
+    },
+    {
+      "key": "company_name",
+      "bucket": "user_data",
+      "type": "text",
+      "required": false,
+      "i18nKey": "account.attributes.companyName"
+    },
+    {
+      "key": "internal_risk_score",
+      "bucket": "system_data",
+      "type": "number",
+      "required": false,
+      "i18nKey": "account.attributes.internalRiskScore"
+    }
+  ]
+}
