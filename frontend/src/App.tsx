@@ -4,6 +4,7 @@ import Layout from "./components/Layout"
 import Consent from "./pages/Consent"
 import ConsentRejected from "./pages/ConsentRejected"
 import Login from "./pages/Login"
+import Register from "./pages/Register"
 import OAuthCallback from "./pages/OAuthCallback"
 import Version from "./pages/Version"
 
@@ -13,6 +14,7 @@ function App() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
       <Route path="/oauth/callback" element={<OAuthCallback />} />
       <Route path="/consent" element={<Consent />} />
       <Route path="/consent-rejected" element={<ConsentRejected />} />
