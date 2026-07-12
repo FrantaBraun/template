@@ -80,12 +80,36 @@ async def test_logout_success(auth_test_settings):
 
 @respx.mock
 async def test_get_me(auth_test_settings):
+    """/me now returns a consent wrapper, not the flat profile directly."""
     respx.get("https://auth.test/api/auth/me").mock(
-        return_value=Response(200, json={"id": "u1", "login": "alogin"})
+        return_value=Response(
+            200,
+            json={
+                "consent_required": False,
+                "application_group_id": "g1",
+                "user": {"id": "u1", "login": "alogin"},
+            },
+        )
     )
     client = AuthClient(auth_test_settings)
     me = await client.get_me(access_token="a")
-    assert me["login"] == "alogin"
+    assert me["consent_required"] is False
+    assert me["user"]["login"] == "alogin"
+    await client.aclose()
+
+
+@respx.mock
+async def test_get_me_consent_required(auth_test_settings):
+    respx.get("https://auth.test/api/auth/me").mock(
+        return_value=Response(
+            200,
+            json={"consent_required": True, "application_group_id": "g1", "user": None},
+        )
+    )
+    client = AuthClient(auth_test_settings)
+    me = await client.get_me(access_token="a")
+    assert me["consent_required"] is True
+    assert me["user"] is None
     await client.aclose()
 
 
@@ -101,29 +125,41 @@ async def test_get_public_key(auth_test_settings):
 
 
 @respx.mock
-async def test_register_without_api_key_raises_before_any_request():
-    """An empty X-Api-Key isn't rejected by the auth service - it's silently
-    treated as no application context, skipping the consent check entirely.
-    register()/login() must fail loudly instead of sending it anyway."""
-    route = respx.post("https://auth.test/api/auth/register").mock(return_value=Response(201))
-    client = AuthClient(Settings(auth_url="https://auth.test", auth_api_key=""))
-
-    with pytest.raises(RuntimeError):
-        await client.register(
-            email="a@example.com", login="alogin", password="password123", first_name="A", last_name="B"
+async def test_get_group_info(auth_test_settings):
+    respx.get("https://auth.test/api/auth/group-info").mock(
+        return_value=Response(
+            200,
+            json={"id": "g1", "name": "My App", "description": "...", "scopes": ["email"]},
         )
-
-    assert route.call_count == 0
+    )
+    client = AuthClient(auth_test_settings)
+    info = await client.get_group_info()
+    assert info["name"] == "My App"
     await client.aclose()
 
 
-@respx.mock
-async def test_login_without_api_key_raises_before_any_request():
-    route = respx.post("https://auth.test/api/auth/login").mock(return_value=Response(200))
-    client = AuthClient(Settings(auth_url="https://auth.test", auth_api_key=""))
+@pytest.fixture()
+def no_key_client():
+    return AuthClient(Settings(auth_url="https://auth.test", auth_api_key=""))
 
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda c: c.register(email="a@example.com", login="a", password="password123", first_name="A", last_name="B"),
+        lambda c: c.login(identifier="user", password="pw"),
+        lambda c: c.refresh(refresh_token="rt"),
+        lambda c: c.logout(access_token="a", refresh_token="r"),
+        lambda c: c.get_me(access_token="a"),
+        lambda c: c.get_public_key(),
+        lambda c: c.get_group_info(),
+        lambda c: c.get_consent_info(group_id="g1", access_token="a"),
+        lambda c: c.grant_consent(group_id="g1", access_token="a"),
+        lambda c: c.reject_consent(group_id="g1", access_token="a"),
+    ],
+)
+async def test_every_method_requires_api_key(no_key_client, call):
+    """X-Api-Key is now mandatory on every call, not just register/login."""
     with pytest.raises(RuntimeError):
-        await client.login(identifier="user", password="pw")
-
-    assert route.call_count == 0
-    await client.aclose()
+        await call(no_key_client)
+    await no_key_client.aclose()

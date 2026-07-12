@@ -6,10 +6,12 @@ from app.config import Settings, get_settings
 class AuthClient:
     """Async client for auth.withfbraun.com, the shared authorization service.
 
-    Every method except `login` raises via response.raise_for_status() on a
-    non-2xx response. `login` is the one call that must NOT raise on 403:
-    the caller needs to distinguish "200 with tokens" from "403
-    consent_required" itself, and raising would collapse that distinction.
+    X-Api-Key is required on every request - the auth service uses it to
+    identify which application group is calling. Every method except `login`
+    raises via response.raise_for_status() on a non-2xx response. `login` is
+    the one call that must NOT raise on 403: the caller needs to distinguish
+    "200 with tokens" from "403 consent_required" itself, and raising would
+    collapse that distinction.
     """
 
     def __init__(self, settings: Settings | None = None):
@@ -33,9 +35,9 @@ class AuthClient:
             # never picked up AUTH_API_KEY after it was added to .env - the
             # Settings singleton is cached for the process lifetime).
             raise RuntimeError(
-                "AUTH_API_KEY is not configured - register/login need it to "
-                "identify this application's group. Set it in backend/.env "
-                "and restart the backend process."
+                "AUTH_API_KEY is not configured - every request to the auth "
+                "service requires it. Set it in backend/.env and restart the "
+                "backend process."
             )
 
     async def register(
@@ -72,11 +74,13 @@ class AuthClient:
         )
 
     async def refresh(self, *, refresh_token: str) -> dict:
+        self._require_api_key()
         r = await self._http.post("/api/auth/refresh", json={"refresh_token": refresh_token})
         r.raise_for_status()
         return r.json()
 
     async def logout(self, *, access_token: str, refresh_token: str) -> None:
+        self._require_api_key()
         r = await self._http.post(
             "/api/auth/logout",
             json={"refresh_token": refresh_token},
@@ -85,6 +89,9 @@ class AuthClient:
         r.raise_for_status()
 
     async def get_me(self, *, access_token: str) -> dict:
+        """Returns {consent_required, application_group_id, user}. `user` is
+        only populated once consent_required is false."""
+        self._require_api_key()
         r = await self._http.get(
             "/api/auth/me", headers={"Authorization": f"Bearer {access_token}"}
         )
@@ -92,11 +99,21 @@ class AuthClient:
         return r.json()
 
     async def get_public_key(self) -> str:
+        self._require_api_key()
         r = await self._http.get("/api/auth/public-key")
         r.raise_for_status()
         return r.json()["public_key"]
 
+    async def get_group_info(self) -> dict:
+        """{id, name, description, scopes} for the group identified by our
+        own X-Api-Key - no user token needed, used to render the consent page."""
+        self._require_api_key()
+        r = await self._http.get("/api/auth/group-info")
+        r.raise_for_status()
+        return r.json()
+
     async def get_consent_info(self, *, group_id: str, access_token: str) -> dict:
+        self._require_api_key()
         r = await self._http.get(
             f"/api/auth/consent-info/{group_id}",
             headers={"Authorization": f"Bearer {access_token}"},
@@ -105,6 +122,7 @@ class AuthClient:
         return r.json()
 
     async def grant_consent(self, *, group_id: str, access_token: str) -> None:
+        self._require_api_key()
         r = await self._http.post(
             f"/api/auth/consent/{group_id}/grant",
             headers={"Authorization": f"Bearer {access_token}"},
@@ -112,6 +130,7 @@ class AuthClient:
         r.raise_for_status()
 
     async def reject_consent(self, *, group_id: str, access_token: str) -> None:
+        self._require_api_key()
         r = await self._http.post(
             f"/api/auth/consent/{group_id}/reject",
             headers={"Authorization": f"Bearer {access_token}"},
