@@ -1,13 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { useLocation } from 'react-router-dom'
 import { getAuthUrl } from '../api/client'
-import { ConsentRequiredError, useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/AuthContext'
 import usePageMeta from '../hooks/usePageMeta'
-
-function buildConsentUrl(groupId: string) {
-  const redirectUri = `${window.location.origin}/consent-callback`
-  return `${getAuthUrl()}/consent?group=${groupId}&redirect_uri=${encodeURIComponent(redirectUri)}`
-}
 
 function buildGoogleLoginUrl() {
   const redirectUri = `${window.location.origin}/oauth/callback`
@@ -31,11 +26,9 @@ export default function Login() {
     setLoading(true)
     try {
       await login(identifier, password)
+      // On consent_required, login() already redirected to /consent - it
+      // returns normally rather than throwing, so nothing more to do here.
     } catch (err) {
-      if (err instanceof ConsentRequiredError) {
-        window.location.href = buildConsentUrl(err.groupId)
-        return
-      }
       setError(err instanceof Error ? err.message : 'Login failed')
       setLoading(false)
     }

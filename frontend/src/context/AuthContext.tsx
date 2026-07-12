@@ -1,16 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { clearTokens, getRefreshToken, setTokens } from '../api/client'
 import { apiFetch } from '../api/client'
-
-export class ConsentRequiredError extends Error {
-  groupId: string
-
-  constructor(groupId: string) {
-    super('consent_required')
-    this.name = 'ConsentRequiredError'
-    this.groupId = groupId
-  }
-}
 
 interface AuthContextType {
   user: any | null
@@ -30,19 +21,47 @@ const AuthContext = createContext<AuthContextType>({
   loadUser: async () => {},
 })
 
+// err.detail is an object for consent_required ({consent_required, application_group_id}),
+// not a string - `new Error(err.detail)` would silently stringify it to "[object Object]".
+function extractConsentGroupId(body: any): string | null {
+  const detail = body?.detail
+  if (detail && typeof detail === 'object' && detail.consent_required) {
+    return detail.application_group_id ?? null
+  }
+  return null
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser]       = useState(null)
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
+
+  const redirectToConsent = useCallback(
+    (groupId: string) => {
+      const redirectTo = window.location.pathname + window.location.search
+      navigate(`/consent?group=${groupId}&redirect=${encodeURIComponent(redirectTo)}`, { replace: true })
+    },
+    [navigate],
+  )
 
   const loadUser = useCallback(async () => {
     const resp = await apiFetch('/api/auth/me').catch(() => null)
     if (resp?.ok) {
       setUser(await resp.json())
-    } else {
-      clearTokens()
-      setUser(null)
+      return
     }
-  }, [])
+    if (resp?.status === 403) {
+      const groupId = extractConsentGroupId(await resp.json().catch(() => ({})))
+      if (groupId) {
+        // The user IS validly authenticated, just missing consent - keep
+        // their tokens so retrying /me after granting succeeds immediately.
+        redirectToConsent(groupId)
+        return
+      }
+    }
+    clearTokens()
+    setUser(null)
+  }, [redirectToConsent])
 
   useEffect(() => {
     if (localStorage.getItem('access_token')) {
@@ -59,10 +78,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}))
-      // err.detail is an object for consent_required ({consent_required, application_group_id}),
-      // not a string - `new Error(err.detail)` would silently stringify it to "[object Object]".
-      if (err.detail && typeof err.detail === 'object' && err.detail.consent_required) {
-        throw new ConsentRequiredError(err.detail.application_group_id)
+      const groupId = extractConsentGroupId(err)
+      if (groupId) {
+        redirectToConsent(groupId)
+        return
       }
       throw new Error(typeof err.detail === 'string' ? err.detail : 'Login failed')
     }
@@ -93,4 +112,3 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   return useContext(AuthContext)
 }
-
