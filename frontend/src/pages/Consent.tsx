@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { apiFetch } from '../api/client'
+import { useAuth } from '../context/AuthContext'
 import usePageMeta from '../hooks/usePageMeta'
 
 interface GroupInfo {
@@ -28,6 +29,7 @@ export default function Consent() {
   usePageMeta({ title: t('consent.pageTitle'), description: t('consent.pageDescription') })
   const [params] = useSearchParams()
   const navigate = useNavigate()
+  const { loadUser } = useAuth()
   const groupId = params.get('group')
   const redirectTo = params.get('redirect') || '/'
 
@@ -57,6 +59,11 @@ export default function Consent() {
       const resp = await apiFetch(`/api/auth/consent/${groupId}/${action}`, { method: 'POST' })
       if (!resp.ok) throw new Error()
       if (action === 'grant') {
+        // AuthContext's user is still null from the earlier consent_required
+        // response (loadUser() returns early without setting it) - refresh it
+        // now that /me will succeed, or a guarded redirectTo would immediately
+        // bounce back to /login on the stale null state.
+        await loadUser()
         navigate(redirectTo, { replace: true })
       } else {
         navigate('/consent-rejected', { replace: true })

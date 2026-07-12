@@ -50,7 +50,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const redirectToConsent = useCallback(
     (groupId: string) => {
-      const redirectTo = window.location.pathname + window.location.search
+      // /login, /oauth/callback and /consent itself are transient auth-flow
+      // pages, never a destination the user was actually trying to reach -
+      // if consent gets (re-)detected while already on one of these (e.g.
+      // loadUser() called from within login() itself, or called again on a
+      // stray effect re-run), capturing it as the redirect target would send
+      // the user back to an empty login form, or nest /consent inside its
+      // own redirect param. Fall back to home instead.
+      const currentPath = window.location.pathname
+      const isTransientAuthPage = ['/login', '/oauth/callback', '/consent'].includes(currentPath)
+      const redirectTo = isTransientAuthPage ? '/' : currentPath + window.location.search
       navigate(`/consent?group=${groupId}&redirect=${encodeURIComponent(redirectTo)}`, { replace: true })
     },
     [navigate],
@@ -87,7 +96,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       setLoading(false)
     }
-  }, [loadUser])
+    // Intentionally run once on mount only. loadUser's identity depends on
+    // navigate (via redirectToConsent), which react-router doesn't guarantee
+    // is referentially stable across navigations - depending on [loadUser]
+    // here caused this initial-session check to re-fire on unrelated route
+    // changes, redundantly re-querying /me and, if consent was pending,
+    // re-triggering the consent redirect using the *current* (already
+    // redirected-to) URL as the new target.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function login(identifier: string, password: string) {
     const resp = await apiFetch('/api/auth/login', {
