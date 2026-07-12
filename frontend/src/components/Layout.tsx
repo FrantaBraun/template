@@ -7,8 +7,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-
-const LANGUAGES = ['cs', 'en'] as const
+import { SUPPORTED_LANGUAGES } from '../i18n'
 
 /** Small control to switch the active i18next language between the supported locales. */
 function LanguageSwitcher() {
@@ -16,7 +15,7 @@ function LanguageSwitcher() {
 
   return (
     <div className="flex items-center gap-1 text-xs uppercase tracking-wide text-slate-500">
-      {LANGUAGES.map((lng) => (
+      {SUPPORTED_LANGUAGES.map((lng) => (
         <button
           key={lng}
           onClick={() => i18n.changeLanguage(lng)}

@@ -8,6 +8,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import { useNavigate } from 'react-router-dom'
 import { clearTokens, getRefreshToken, setTokens } from '../api/client'
 import { apiFetch } from '../api/client'
+import { applyUserLanguage } from '../i18n'
 
 interface AuthContextType {
   user: any | null
@@ -58,7 +59,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadUser = useCallback(async (): Promise<boolean> => {
     const resp = await apiFetch('/api/auth/me').catch(() => null)
     if (resp?.ok) {
-      setUser(await resp.json())
+      const userData = await resp.json()
+      setUser(userData)
+      // Switch to the signed-in user's own language preference (with a
+      // supported-language/EN/leave-as-is fallback) rather than whatever
+      // the browser or a pre-login manual choice left active.
+      applyUserLanguage(userData.language_code)
       return true
     }
     if (resp?.status === 403) {

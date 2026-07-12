@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext'
 import usePageMeta from '../hooks/usePageMeta'
 import { loadUserAttributes, type UserAttribute } from '../config/userAttributes'
 import DynamicAttributeField from '../components/DynamicAttributeField'
+import { applyUserLanguage } from '../i18n'
 
 interface AccountData {
   id: string
@@ -149,7 +150,11 @@ export default function Account() {
         body: JSON.stringify(profileForm),
       })
       if (!profileResp.ok) throw new Error()
-      setProfile(await profileResp.json())
+      const updatedProfile: ProfileData = await profileResp.json()
+      setProfile(updatedProfile)
+      // Keep the active UI language in sync if the user just changed their
+      // stored preference here, same cascade as on login.
+      applyUserLanguage(updatedProfile.language_code as string | null | undefined)
 
       if (groupId && attributes.length > 0) {
         // PATCH replaces the whole user_data object, so send the full set of
