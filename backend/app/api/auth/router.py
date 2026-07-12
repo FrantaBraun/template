@@ -67,14 +67,14 @@ async def me(
     live profile from the auth service - not cached locally, so it's always
     current and never duplicates identity data this app doesn't own.
 
-    Upstream /me has two real response shapes (verified directly, not just
-    from docs): when consent is missing, 200 with
-    {consent_required: true, application_group_id, user: null} - we convert
-    that into the same 403 shape /login already uses, so the frontend has one
-    code path for both (this also covers entry points that skip /login's own
-    check, e.g. Google OAuth). When consent is already granted, it's just the
-    flat profile with no wrapper at all - not {consent_required: false, ...,
-    user: {...}} as originally assumed."""
+    Per the published MeResponse schema, consent_required and
+    application_group_id are always present; user is populated only once
+    consent is granted. We convert consent_required into the same 403 shape
+    /login already uses, so the frontend has one code path for both (this
+    also covers entry points that skip /login's own check, e.g. Google
+    OAuth). `.get("user") or result` is kept as a defensive fallback for an
+    earlier observed state where a granted response had no wrapper at all -
+    cheap insurance, shouldn't trigger against the current schema."""
     try:
         result = await auth_client.get_me(access_token=credentials.credentials)
     except httpx.HTTPStatusError as exc:
