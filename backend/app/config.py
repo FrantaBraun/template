@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     app_base_url: str = "http://localhost:8000"
     frontend_url: str = "http://localhost:3000"
     cors_enabled: bool = True
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins: list[str] = ["http://localhost:5173"]
 
     # Authorization (auth.withfbraun.com)
     auth_url: str = "https://auth.withfbraun.com"
@@ -33,11 +33,11 @@ class Settings(BaseSettings):
     mail_suppress_send: bool = False
 
     # Logging
-    log_level: str = "INFO"
-    log_dir: str = "logs"
-    log_rotation_when: str = "midnight"
-    log_rotation_interval: int = 1
-    log_rotation_backup_count: int = 14
+    logging_level: str = "INFO"
+    logging_dir: str = "logs"
+    logging_filename: str = "app.log"
+    logging_days_history: int = 5
+    logging_message_format: str = r"%(asctime)s %(levelname)s\t- %(module)s.%(funcName)s: %(message)s"
 
 
 @lru_cache
