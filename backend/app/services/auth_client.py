@@ -14,14 +14,29 @@ class AuthClient:
 
     def __init__(self, settings: Settings | None = None):
         settings = settings or get_settings()
+        self._api_key = settings.auth_api_key
         self._http = httpx.AsyncClient(
             base_url=settings.auth_url,
-            headers={"X-Api-Key": settings.auth_api_key},
+            headers={"X-Api-Key": self._api_key},
             timeout=15,
         )
 
     async def aclose(self) -> None:
         await self._http.aclose()
+
+    def _require_api_key(self) -> None:
+        if not self._api_key:
+            # An empty/missing X-Api-Key isn't rejected by the auth service -
+            # it's silently treated as "no application context", which skips
+            # the consent check entirely. Failing loudly here beats a silent
+            # security-relevant misconfiguration (e.g. a stale process that
+            # never picked up AUTH_API_KEY after it was added to .env - the
+            # Settings singleton is cached for the process lifetime).
+            raise RuntimeError(
+                "AUTH_API_KEY is not configured - register/login need it to "
+                "identify this application's group. Set it in backend/.env "
+                "and restart the backend process."
+            )
 
     async def register(
         self,
@@ -33,6 +48,7 @@ class AuthClient:
         last_name: str,
         **extra: object,
     ) -> dict:
+        self._require_api_key()
         r = await self._http.post(
             "/api/auth/register",
             json={
@@ -50,6 +66,7 @@ class AuthClient:
     async def login(self, *, identifier: str, password: str) -> httpx.Response:
         """Returns the raw response - inspect .status_code: 200 = tokens in
         body, 403 = consent_required, anything else = a real error."""
+        self._require_api_key()
         return await self._http.post(
             "/api/auth/login", json={"identifier": identifier, "password": password}
         )
