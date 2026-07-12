@@ -1,0 +1,256 @@
+import { useEffect, useState, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
+import { apiFetch } from '../api/client'
+import { useAuth } from '../context/AuthContext'
+import usePageMeta from '../hooks/usePageMeta'
+import { loadUserAttributes, type UserAttribute } from '../config/userAttributes'
+import DynamicAttributeField from '../components/DynamicAttributeField'
+
+interface AccountData {
+  id: string
+  nickname: string | null
+  created_at: string
+  updated_at: string
+}
+
+interface ProfileData {
+  application_group_id?: string | null
+  [key: string]: unknown
+}
+
+type Message = { type: 'success' | 'error'; text: string } | null
+
+const PROFILE_FIELDS = [
+  'first_name',
+  'last_name',
+  'avatar_url',
+  'language_code',
+  'birth_date',
+  'country_code',
+] as const
+
+export default function Account() {
+  const { t } = useTranslation()
+  usePageMeta({ title: t('account.pageTitle'), description: t('account.pageDescription') })
+  const { user, loading: authLoading } = useAuth()
+  const navigate = useNavigate()
+
+  const [account, setAccount] = useState<AccountData | null>(null)
+  const [nickname, setNickname] = useState('')
+  const [accountSaving, setAccountSaving] = useState(false)
+  const [accountMessage, setAccountMessage] = useState<Message>(null)
+
+  const [profile, setProfile] = useState<ProfileData | null>(null)
+  const [profileForm, setProfileForm] = useState<Record<string, string>>({})
+  const [attributes, setAttributes] = useState<UserAttribute[]>([])
+  const [attributeValues, setAttributeValues] = useState<Record<string, unknown>>({})
+  const [groupId, setGroupId] = useState<string | null>(null)
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileMessage, setProfileMessage] = useState<Message>(null)
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login', { replace: true })
+    }
+  }, [authLoading, user, navigate])
+
+  useEffect(() => {
+    if (!user) return
+
+    apiFetch('/api/account/me')
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data: AccountData) => {
+        setAccount(data)
+        setNickname(data.nickname ?? '')
+      })
+      .catch(() => setAccountMessage({ type: 'error', text: t('account.saveError') }))
+
+    apiFetch('/api/auth/me')
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data: ProfileData) => {
+        setProfile(data)
+        setProfileForm(
+          Object.fromEntries(PROFILE_FIELDS.map((field) => [field, (data[field] as string | null) ?? ''])),
+        )
+        if (data.application_group_id) setGroupId(data.application_group_id)
+      })
+      .catch(() => setProfileMessage({ type: 'error', text: t('account.saveError') }))
+
+    loadUserAttributes().then(setAttributes)
+  }, [user, t])
+
+  useEffect(() => {
+    if (!groupId) return
+    apiFetch(`/api/auth/me/group-attributes/${groupId}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data: { user_data: Record<string, unknown> | null }) => {
+        setAttributeValues(data.user_data ?? {})
+      })
+      .catch(() => {})
+  }, [groupId])
+
+  if (authLoading || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-slate-100">
+        <p className="text-sm text-slate-400">{t('common.loading')}</p>
+      </div>
+    )
+  }
+
+  async function handleAccountSubmit(e: FormEvent) {
+    e.preventDefault()
+    setAccountSaving(true)
+    setAccountMessage(null)
+    try {
+      // Local data only - this call never reaches the auth service.
+      const resp = await apiFetch('/api/account/me', {
+        method: 'PATCH',
+        body: JSON.stringify({ nickname: nickname || null }),
+      })
+      if (!resp.ok) throw new Error()
+      setAccount(await resp.json())
+      setAccountMessage({ type: 'success', text: t('account.saveSuccess') })
+    } catch {
+      setAccountMessage({ type: 'error', text: t('account.saveError') })
+    } finally {
+      setAccountSaving(false)
+    }
+  }
+
+  async function handleProfileSubmit(e: FormEvent) {
+    e.preventDefault()
+
+    const missing = attributes.filter((attribute) => attribute.required && !attributeValues[attribute.key])
+    if (missing.length > 0) {
+      const labels = missing.map((attribute) => t(attribute.i18nKey)).join(', ')
+      setProfileMessage({ type: 'error', text: `${t('common.requiredFieldsMissing')} (${labels})` })
+      return
+    }
+
+    setProfileSaving(true)
+    setProfileMessage(null)
+    try {
+      const profileResp = await apiFetch('/api/auth/me', {
+        method: 'PATCH',
+        body: JSON.stringify(profileForm),
+      })
+      if (!profileResp.ok) throw new Error()
+      setProfile(await profileResp.json())
+
+      if (groupId && attributes.length > 0) {
+        // PATCH replaces the whole user_data object, so send the full set of
+        // known values, not just whichever field changed.
+        const attrResp = await apiFetch(`/api/auth/me/group-attributes/${groupId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ user_data: attributeValues }),
+        })
+        if (!attrResp.ok) throw new Error()
+      }
+
+      setProfileMessage({ type: 'success', text: t('account.saveSuccess') })
+    } catch {
+      setProfileMessage({ type: 'error', text: t('account.saveError') })
+    } finally {
+      setProfileSaving(false)
+    }
+  }
+
+  return (
+    <div className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-16 text-slate-100">
+      <h1 className="text-2xl font-semibold tracking-tight">{t('account.pageTitle')}</h1>
+
+      <form onSubmit={handleAccountSubmit} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+          {t('account.accountCard.title')}
+        </h2>
+
+        <div>
+          <label htmlFor="nickname" className="mb-1 block text-sm text-slate-400">
+            {t('account.accountCard.nicknameLabel')}
+          </label>
+          <input
+            id="nickname"
+            type="text"
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100"
+          />
+        </div>
+
+        {accountMessage && (
+          <p className={`text-sm ${accountMessage.type === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>
+            {accountMessage.text}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={accountSaving || !account}
+          className="rounded-lg bg-slate-100 px-4 py-2 font-medium text-slate-900 disabled:opacity-50"
+        >
+          {accountSaving ? t('common.saving') : t('common.save')}
+        </button>
+      </form>
+
+      <form onSubmit={handleProfileSubmit} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+          {t('account.profileCard.title')}
+        </h2>
+
+        <div className="grid grid-cols-2 gap-4">
+          {(
+            [
+              ['first_name', t('account.profileCard.firstNameLabel')],
+              ['last_name', t('account.profileCard.lastNameLabel')],
+              ['avatar_url', t('account.profileCard.avatarUrlLabel')],
+              ['language_code', t('account.profileCard.languageCodeLabel')],
+              ['birth_date', t('account.profileCard.birthDateLabel')],
+              ['country_code', t('account.profileCard.countryCodeLabel')],
+            ] as const
+          ).map(([field, label]) => (
+            <div key={field}>
+              <label htmlFor={field} className="mb-1 block text-sm text-slate-400">
+                {label}
+              </label>
+              <input
+                id={field}
+                type={field === 'birth_date' ? 'date' : 'text'}
+                value={profileForm[field] ?? ''}
+                onChange={(e) => setProfileForm((prev) => ({ ...prev, [field]: e.target.value }))}
+                className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-slate-100"
+              />
+            </div>
+          ))}
+        </div>
+
+        {attributes.length > 0 && (
+          <div className="space-y-4 border-t border-slate-800 pt-4">
+            {attributes.map((attribute) => (
+              <DynamicAttributeField
+                key={attribute.key}
+                attribute={attribute}
+                value={attributeValues[attribute.key]}
+                onChange={(key, value) => setAttributeValues((prev) => ({ ...prev, [key]: value }))}
+              />
+            ))}
+          </div>
+        )}
+
+        {profileMessage && (
+          <p className={`text-sm ${profileMessage.type === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>
+            {profileMessage.text}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={profileSaving || !profile}
+          className="rounded-lg bg-slate-100 px-4 py-2 font-medium text-slate-900 disabled:opacity-50"
+        >
+          {profileSaving ? t('common.saving') : t('common.save')}
+        </button>
+      </form>
+    </div>
+  )
+}
