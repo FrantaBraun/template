@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# Part of the With FBraun project template.
+# Author: František Braun <frantisek.braun95@gmail.com>
+# Freely available as a template for building custom applications.
+
 """
 Build and upload script for backend, frontend and deployment scripts.
 
@@ -35,6 +39,7 @@ CONFIG_FILE = SCRIPTS_DIR / "build.config.toml"
 # ─── Config ───────────────────────────────────────────────────────────────────
 
 def load_config() -> dict:
+    """Load scripts/build.config.toml, exiting with guidance if it's missing."""
     if not CONFIG_FILE.exists():
         sys.exit(
             f"Config file not found: {CONFIG_FILE}\n"
@@ -47,6 +52,7 @@ def load_config() -> dict:
 # ─── Git helpers ──────────────────────────────────────────────────────────────
 
 def git(*args: str) -> str:
+    """Run a git command at the repo root and return its stdout, stripped."""
     result = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
     if result.returncode != 0:
         sys.exit(f"git {' '.join(args)} failed:\n{result.stderr.strip()}")
@@ -68,6 +74,7 @@ def latest_tag(prefix: str) -> str:
 
 
 def short_hash() -> str:
+    """Return the current commit's short SHA, used in SNAPSHOT filenames."""
     return git("rev-parse", "--short", "HEAD")
 
 
@@ -85,6 +92,9 @@ def git_archive_bytes(ref: str, subtree: str) -> bytes:
 # ─── Build: backend ───────────────────────────────────────────────────────────
 
 def build_backend(ref: str, output_path: Path) -> None:
+    """Archive backend/ at the given git ref straight into a zip - no build
+    step, since the backend ships as source (installed via requirements.txt
+    on the target server)."""
     print(f"  Archiving backend/ from {ref} …")
     output_path.write_bytes(git_archive_bytes(ref, "backend"))
     size_kb = output_path.stat().st_size // 1024
@@ -99,6 +109,12 @@ _SCRIPT_FILES          = ["install.sh", "upgrade.sh", "./../backend/.env"]
 
 
 def build_scripts(output_path: Path) -> None:
+    """Bundle the deployment scripts (install.sh, upgrade.sh), the local
+    deploy config, and the current backend/.env - the target server needs
+    its own copy of .env to provision the Postgres role/DB during install.
+    This package always reflects the current local filesystem, never a git
+    ref: unlike backend/frontend it isn't meant to be redistributed as part
+    of the template, only pushed to this project's own live server."""
     if _DEPLOY_CONFIG.exists():
         config_src = _DEPLOY_CONFIG
         config_label = "deploy.config.sh"
@@ -126,6 +142,9 @@ def build_scripts(output_path: Path) -> None:
 # ─── Build: frontend ──────────────────────────────────────────────────────────
 
 def build_frontend(ref: str, output_path: Path, cfg: dict) -> None:
+    """Extract frontend/ at the given git ref into a temp dir, write a build-time
+    .env (public URLs only - nothing secret), run npm install + build there, and
+    zip the resulting dist/ - the frontend ships as a static build, not source."""
     npm = shutil.which("npm") or cfg.get("build", {}).get("npm_command", "npm")
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -170,6 +189,8 @@ VITE_APP_URL=https://auth.withfbraun.com""")
 # ─── FTP upload ───────────────────────────────────────────────────────────────
 
 def _ftp_mkdirs(ftp: ftplib.FTP, remote_dir: str) -> None:
+    """Create remote_dir on the FTP server one path segment at a time,
+    since most FTP servers reject mkd on a nested path that doesn't exist yet."""
     parts = remote_dir.strip("/").split("/")
     current = ""
     for part in parts:
@@ -182,6 +203,8 @@ def _ftp_mkdirs(ftp: ftplib.FTP, remote_dir: str) -> None:
 
 
 def upload_ftp(local_path: Path, remote_dir: str, cfg: dict) -> None:
+    """Upload a built zip to remote_dir over FTP or FTPS, per cfg["ftp"]
+    (host/port/credentials/tls/passive - see build.config.toml.example)."""
     fc = cfg["ftp"]
     host, port = fc["host"], fc.get("port", 21)
     use_tls = fc.get("tls", False)
@@ -207,6 +230,8 @@ def upload_ftp(local_path: Path, remote_dir: str, cfg: dict) -> None:
 # ─── CLI ──────────────────────────────────────────────────────────────────────
 
 def resolve_ref(mode: str, target: str, tag: str | None) -> str:
+    """Resolve which git ref to build from: HEAD for SNAPSHOT/scripts, an
+    explicit --tag if given, otherwise the latest B-/F- tag for the target."""
     if mode == "SNAPSHOT" or target == "scripts":
         return "HEAD"
     if tag:
@@ -218,6 +243,8 @@ def resolve_ref(mode: str, target: str, tag: str | None) -> str:
 
 
 def zip_name(mode: str, target: str, ref: str) -> str:
+    """Build the output zip's filename: tag-based in STABLE mode, date +
+    short commit hash in SNAPSHOT mode (or for the untagged scripts target)."""
     date = datetime.now().strftime("%Y%m%d")
     if target == "scripts":
         if mode == "STABLE":
@@ -229,6 +256,8 @@ def zip_name(mode: str, target: str, ref: str) -> str:
 
 
 def main() -> None:
+    """CLI entry point: parse args, resolve the ref/output name per target,
+    build each requested target, and upload it unless --no-upload is set."""
     parser = argparse.ArgumentParser(
         description="Build and upload backend/frontend packages.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
