@@ -1,3 +1,11 @@
+# Part of the With FBraun project template.
+# Author: František Braun <frantisek.braun95@gmail.com>
+# Freely available as a template for building custom applications.
+
+"""Tests for /api/auth/*: register/login/refresh/logout/me/group-info/consent,
+proxied to a mocked auth.withfbraun.com and asserting the BFF's own
+consent_required -> 403 conversion and bearer-auth requirements."""
+
 import uuid
 
 import respx

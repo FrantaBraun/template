@@ -1,3 +1,7 @@
+# Part of the With FBraun project template.
+# Author: František Braun <frantisek.braun95@gmail.com>
+# Freely available as a template for building custom applications.
+
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 
 from app.config import Settings, get_settings

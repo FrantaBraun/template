@@ -1,3 +1,7 @@
+# Part of the With FBraun project template.
+# Author: František Braun <frantisek.braun95@gmail.com>
+# Freely available as a template for building custom applications.
+
 import logging
 from contextlib import asynccontextmanager
 
@@ -18,6 +22,8 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """FastAPI startup/shutdown hook: closes the shared AuthClient's HTTP
+    connection and disposes the DB engine's connection pool on shutdown."""
     logger.info("Application startup")
     yield
     logger.info("Application shutdown")

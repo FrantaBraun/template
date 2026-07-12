@@ -1,3 +1,7 @@
+# Part of the With FBraun project template.
+# Author: František Braun <frantisek.braun95@gmail.com>
+# Freely available as a template for building custom applications.
+
 from pydantic import BaseModel, EmailStr
 
 
@@ -15,6 +19,8 @@ class EmailParams(BaseModel):
 
 
 class RegisterRequest(BaseModel):
+    """Matches auth.withfbraun.com's registration body - POST /api/auth/register."""
+
     email: EmailStr
     login: str
     password: str
@@ -27,15 +33,24 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
+    """Matches auth.withfbraun.com's login body - identifier accepts either
+    email or login/username, per the upstream contract."""
+
     identifier: str
     password: str
 
 
 class RefreshRequest(BaseModel):
+    """Body for POST /api/auth/refresh - exchanges a refresh token for a new
+    access/refresh pair."""
+
     refresh_token: str
 
 
 class LogoutRequest(BaseModel):
+    """Body for POST /api/auth/logout - the refresh token to revoke; the
+    access token itself travels in the Authorization header instead."""
+
     refresh_token: str
 
 

@@ -1,3 +1,11 @@
+# Part of the With FBraun project template.
+# Author: František Braun <frantisek.braun95@gmail.com>
+# Freely available as a template for building custom applications.
+
+"""Tests for app.services.auth_client.AuthClient: each upstream method
+against a mocked auth.withfbraun.com (via respx), plus the mandatory
+X-Api-Key requirement enforced across every single method."""
+
 import json
 
 import httpx

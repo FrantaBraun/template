@@ -1,3 +1,10 @@
+# Part of the With FBraun project template.
+# Author: František Braun <frantisek.braun95@gmail.com>
+# Freely available as a template for building custom applications.
+
+"""Tests for app.security.jwt: public-key fetch/caching and local RS256
+verification of access tokens (valid, expired, wrong-key, malformed)."""
+
 import time
 
 import pytest

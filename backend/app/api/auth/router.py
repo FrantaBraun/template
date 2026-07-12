@@ -1,3 +1,7 @@
+# Part of the With FBraun project template.
+# Author: František Braun <frantisek.braun95@gmail.com>
+# Freely available as a template for building custom applications.
+
 from typing import NoReturn
 
 import httpx
@@ -21,6 +25,10 @@ router = APIRouter()
 
 
 def _raise_for_response(response: httpx.Response) -> NoReturn:
+    """Re-raises an upstream non-2xx httpx.Response as the equivalent
+    HTTPException, forwarding its status code and JSON `detail` (or raw text
+    if the body isn't valid JSON) so callers see the same error shape the
+    auth service returned."""
     try:
         detail = response.json().get("detail", response.text)
     except ValueError:
@@ -30,6 +38,9 @@ def _raise_for_response(response: httpx.Response) -> NoReturn:
 
 @router.post("/register", status_code=201)
 async def register(body: RegisterRequest) -> dict:
+    """Proxies straight to the auth service's own /register - this app never
+    stores credentials itself, only the resulting identity's sub claim once
+    it first authenticates (see get_current_user)."""
     try:
         return await auth_client.register(**body.model_dump(exclude_none=True))
     except httpx.HTTPStatusError as exc:
@@ -48,6 +59,9 @@ async def login(body: LoginRequest) -> dict:
 
 @router.post("/refresh")
 async def refresh(body: RefreshRequest) -> dict:
+    """Exchanges a refresh token for a new access/refresh pair - this is what
+    the frontend's apiFetch() calls transparently on a 401 before retrying
+    the original request once."""
     try:
         return await auth_client.refresh(refresh_token=body.refresh_token)
     except httpx.HTTPStatusError as exc:
@@ -59,6 +73,9 @@ async def logout(
     body: LogoutRequest,
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
 ) -> None:
+    """Revokes the refresh token upstream; the access token in the bearer
+    header identifies which session to invalidate. No local state to clear -
+    this app doesn't persist sessions of its own."""
     try:
         await auth_client.logout(access_token=credentials.credentials, refresh_token=body.refresh_token)
     except httpx.HTTPStatusError as exc:
@@ -169,6 +186,8 @@ async def grant_consent(
     group_id: str,
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
 ) -> None:
+    """Called from our own /consent page (not the auth service's hosted one)
+    once the user agrees to the scopes shown via GET /group-info."""
     try:
         await auth_client.grant_consent(group_id=group_id, access_token=credentials.credentials)
     except httpx.HTTPStatusError as exc:
@@ -180,6 +199,8 @@ async def reject_consent(
     group_id: str,
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
 ) -> None:
+    """Called from our own /consent page when the user declines; the
+    frontend follows this with a navigate to /consent-rejected."""
     try:
         await auth_client.reject_consent(group_id=group_id, access_token=credentials.credentials)
     except httpx.HTTPStatusError as exc:

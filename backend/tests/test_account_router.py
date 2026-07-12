@@ -1,3 +1,10 @@
+# Part of the With FBraun project template.
+# Author: František Braun <frantisek.braun95@gmail.com>
+# Freely available as a template for building custom applications.
+
+"""Tests for the /api/account/me router: creating/returning the local User
+row for the authenticated caller and updating its nickname."""
+
 import uuid
 
 from httpx import ASGITransport, AsyncClient

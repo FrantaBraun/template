@@ -1,3 +1,10 @@
+# Part of the With FBraun project template.
+# Author: František Braun <frantisek.braun95@gmail.com>
+# Freely available as a template for building custom applications.
+
+"""Tests for the User model's own defaults and constraints, independent of
+the get_current_user resolution logic covered in test_current_user.py."""
+
 import uuid
 
 import pytest

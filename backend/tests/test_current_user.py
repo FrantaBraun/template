@@ -1,3 +1,10 @@
+# Part of the With FBraun project template.
+# Author: František Braun <frantisek.braun95@gmail.com>
+# Freely available as a template for building custom applications.
+
+"""Tests for app.api.deps.get_current_user: resolving or creating the local
+User row for a verified JWT sub, including the ON CONFLICT race it guards."""
+
 import uuid
 
 from sqlalchemy import func, select

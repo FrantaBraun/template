@@ -1,3 +1,7 @@
+# Part of the With FBraun project template.
+# Author: František Braun <frantisek.braun95@gmail.com>
+# Freely available as a template for building custom applications.
+
 import asyncio
 from logging.config import fileConfig
 
@@ -57,6 +61,11 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
+    """Configure the migration context on a sync connection and run migrations.
+
+    Called via ``connection.run_sync()`` from the async connection obtained in
+    ``run_async_migrations()``, since Alembic's migration context itself is sync.
+    """
     context.configure(connection=connection, target_metadata=target_metadata)
 
     with context.begin_transaction():

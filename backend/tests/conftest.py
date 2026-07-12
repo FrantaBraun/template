@@ -1,3 +1,11 @@
+# Part of the With FBraun project template.
+# Author: František Braun <frantisek.braun95@gmail.com>
+# Freely available as a template for building custom applications.
+
+"""Shared pytest fixtures: a TestClient, RSA keypairs and signed JWTs for
+exercising app.security.jwt without a real auth service, and a rolled-back
+db_session for isolated database tests."""
+
 import time
 import uuid
 
@@ -16,6 +24,8 @@ from app.main import app
 
 @pytest.fixture()
 def client() -> TestClient:
+    """A synchronous FastAPI TestClient for routes that don't need to share
+    an event loop with an async db_session (see db_session below)."""
     return TestClient(app)
 
 
@@ -49,12 +59,18 @@ def generate_rsa_keypair() -> tuple[str, str]:
 
 @pytest.fixture(scope="session")
 def rsa_keypair() -> tuple[str, str]:
+    """Session-scoped: one throwaway RSA keypair reused across the whole test
+    run, since generating a 2048-bit key per test would be wasteful and
+    nothing here depends on a fresh key per test."""
     return generate_rsa_keypair()
 
 
 @pytest.fixture()
 def make_access_token(rsa_keypair):
-    """Factory fixture: make_access_token(sub=..., **claim_overrides) -> signed JWT string."""
+    """Factory fixture: make_access_token(sub=..., **claim_overrides) -> signed JWT string.
+
+    Signs with rsa_keypair's private key so tests can hand get_current_user_claims
+    a real, verifiable RS256 token without ever calling the auth service."""
     private_pem, _ = rsa_keypair
 
     def _make(sub: str | None = None, **overrides) -> str:
@@ -90,11 +106,16 @@ async def db_session() -> AsyncSession:
 
 @pytest.fixture()
 def auth_test_settings() -> Settings:
+    """Settings pointed at a fake auth service host so respx can intercept
+    every call - tests must never reach the real auth.withfbraun.com."""
     return Settings(auth_url="https://auth.test", auth_api_key="test-api-key")
 
 
 @pytest.fixture()
 def mail_test_settings() -> Settings:
+    """Settings with mail_suppress_send=True: send_email still builds and
+    "dispatches" a message internally, so FastMail's record_messages() can
+    assert on it, but no real SMTP connection is opened."""
     return Settings(
         mail_username="test-user",
         mail_password="test-pass",

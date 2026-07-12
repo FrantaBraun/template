@@ -1,3 +1,10 @@
+# Part of the With FBraun project template.
+# Author: František Braun <frantisek.braun95@gmail.com>
+# Freely available as a template for building custom applications.
+
+"""Tests for app.services.email.send_email, using MAIL_SUPPRESS_SEND so no
+real SMTP connection is opened while still asserting on the built message."""
+
 from fastapi_mail import FastMail
 
 from app.services.email import _connection_config, send_email

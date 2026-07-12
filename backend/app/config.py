@@ -1,3 +1,7 @@
+# Part of the With FBraun project template.
+# Author: František Braun <frantisek.braun95@gmail.com>
+# Freely available as a template for building custom applications.
+
 from functools import lru_cache
 from pathlib import Path
 
@@ -42,4 +46,9 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    """Build and cache the Settings singleton for the process lifetime.
+
+    Because this is cached, a running process never picks up .env changes
+    without a restart - `uvicorn --reload` only watches .py files, not .env.
+    """
     return Settings()
