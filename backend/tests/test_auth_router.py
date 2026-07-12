@@ -143,7 +143,9 @@ async def test_me_creates_local_user_and_returns_upstream_profile(
 ):
     """Verified directly against the real service: once consent is granted,
     /me returns the flat profile with no wrapper at all - not
-    {consent_required: false, ..., user: {...}} as originally assumed."""
+    {consent_required: false, ..., user: {...}} as originally assumed. In this
+    legacy no-wrapper shape there's no application_group_id to surface, so it
+    degrades to None rather than raising."""
     _, public_pem = rsa_keypair
     monkeypatch.setattr("app.security.jwt._public_key", public_pem)
     sub = str(uuid.uuid4())
@@ -156,6 +158,7 @@ async def test_me_creates_local_user_and_returns_upstream_profile(
 
     assert resp.status_code == 200
     assert resp.json()["login"] == "alogin"
+    assert resp.json()["application_group_id"] is None
 
 
 @respx.mock
@@ -164,7 +167,7 @@ async def test_me_wrapper_shape_with_user_populated_also_handled(
 ):
     """Defensive: if the upstream ever does wrap a granted response as
     {consent_required: false, user: {...}}, unwrap it rather than return the
-    wrapper itself."""
+    wrapper itself - and still surface application_group_id alongside it."""
     _, public_pem = rsa_keypair
     monkeypatch.setattr("app.security.jwt._public_key", public_pem)
     sub = str(uuid.uuid4())
@@ -184,6 +187,7 @@ async def test_me_wrapper_shape_with_user_populated_also_handled(
 
     assert resp.status_code == 200
     assert resp.json()["login"] == "alogin"
+    assert resp.json()["application_group_id"] == "g1"
 
 
 @respx.mock
@@ -203,6 +207,83 @@ async def test_me_consent_required_returns_403(db_session, make_access_token, rs
     assert resp.status_code == 403
     assert resp.json()["detail"]["consent_required"] is True
     assert resp.json()["detail"]["application_group_id"] == "g1"
+
+
+@respx.mock
+def test_update_me_success(client):
+    respx.patch(f"{AUTH_URL}/api/auth/me").mock(
+        return_value=Response(200, json={"id": "u1", "first_name": "New"})
+    )
+
+    resp = client.patch(
+        "/api/auth/me",
+        json={"first_name": "New"},
+        headers={"Authorization": "Bearer sometoken"},
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["first_name"] == "New"
+
+
+@respx.mock
+def test_update_me_propagates_upstream_error(client):
+    respx.patch(f"{AUTH_URL}/api/auth/me").mock(
+        return_value=Response(422, json={"detail": "invalid country_code"})
+    )
+
+    resp = client.patch(
+        "/api/auth/me",
+        json={"country_code": "XX"},
+        headers={"Authorization": "Bearer sometoken"},
+    )
+
+    assert resp.status_code == 422
+
+
+@respx.mock
+def test_get_group_attributes_success(client):
+    respx.get(f"{AUTH_URL}/api/auth/me/group-attributes/g1").mock(
+        return_value=Response(
+            200,
+            json={"application_group_id": "g1", "user_data": {"company_name": "Acme"}, "updated_at": None},
+        )
+    )
+
+    resp = client.get(
+        "/api/auth/me/group-attributes/g1", headers={"Authorization": "Bearer sometoken"}
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["user_data"]["company_name"] == "Acme"
+
+
+@respx.mock
+def test_update_group_attributes_success(client):
+    respx.patch(f"{AUTH_URL}/api/auth/me/group-attributes/g1").mock(
+        return_value=Response(
+            200,
+            json={"application_group_id": "g1", "user_data": {"company_name": "Acme"}, "updated_at": None},
+        )
+    )
+
+    resp = client.patch(
+        "/api/auth/me/group-attributes/g1",
+        json={"user_data": {"company_name": "Acme"}},
+        headers={"Authorization": "Bearer sometoken"},
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["user_data"]["company_name"] == "Acme"
+
+
+def test_update_me_requires_bearer(client):
+    resp = client.patch("/api/auth/me", json={"first_name": "New"})
+    assert resp.status_code in (401, 403)
+
+
+def test_group_attributes_require_bearer(client):
+    resp = client.get("/api/auth/me/group-attributes/g1")
+    assert resp.status_code in (401, 403)
 
 
 @respx.mock

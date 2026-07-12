@@ -4,7 +4,14 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 
-from app.api.auth.schemas import LoginRequest, LogoutRequest, RefreshRequest, RegisterRequest
+from app.api.auth.schemas import (
+    LoginRequest,
+    LogoutRequest,
+    RefreshRequest,
+    RegisterRequest,
+    UserDataUpdate,
+    UserUpdate,
+)
 from app.api.deps import get_current_user
 from app.models.user import User
 from app.security.jwt import bearer_scheme
@@ -74,7 +81,11 @@ async def me(
     also covers entry points that skip /login's own check, e.g. Google
     OAuth). `.get("user") or result` is kept as a defensive fallback for an
     earlier observed state where a granted response had no wrapper at all -
-    cheap insurance, shouldn't trigger against the current schema."""
+    cheap insurance, shouldn't trigger against the current schema.
+
+    application_group_id is merged into the flat response so callers (e.g.
+    the Account page) can use it for the group-attributes endpoints below
+    without a second round trip."""
     try:
         result = await auth_client.get_me(access_token=credentials.credentials)
     except httpx.HTTPStatusError as exc:
@@ -88,7 +99,59 @@ async def me(
                 "application_group_id": result.get("application_group_id"),
             },
         )
-    return result.get("user") or result
+    user = result.get("user") or result
+    return {**user, "application_group_id": result.get("application_group_id")}
+
+
+@router.patch("/me")
+async def update_me(
+    body: UserUpdate,
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> dict:
+    """Proxies core profile fields to the auth service. No application_group_id
+    in the response - that value doesn't change on a profile edit, and the
+    frontend already has it from the initial GET /me."""
+    try:
+        return await auth_client.update_me(
+            access_token=credentials.credentials,
+            payload=body.model_dump(exclude_none=True),
+        )
+    except httpx.HTTPStatusError as exc:
+        _raise_for_response(exc.response)
+
+
+@router.get("/me/group-attributes/{group_id}")
+async def get_group_attributes(
+    group_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> dict:
+    """{application_group_id, user_data, updated_at} - user_data only,
+    system_data is never included (hidden by the auth service itself)."""
+    try:
+        return await auth_client.get_group_attributes(
+            access_token=credentials.credentials, group_id=group_id
+        )
+    except httpx.HTTPStatusError as exc:
+        _raise_for_response(exc.response)
+
+
+@router.patch("/me/group-attributes/{group_id}")
+async def update_group_attributes(
+    group_id: str,
+    body: UserDataUpdate,
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> dict:
+    """Replaces the ENTIRE user_data object upstream - callers must send the
+    full desired object (merged with whatever they already fetched), not
+    just the changed keys."""
+    try:
+        return await auth_client.update_group_attributes(
+            access_token=credentials.credentials,
+            group_id=group_id,
+            user_data=body.user_data or {},
+        )
+    except httpx.HTTPStatusError as exc:
+        _raise_for_response(exc.response)
 
 
 @router.get("/group-info")

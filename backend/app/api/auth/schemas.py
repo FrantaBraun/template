@@ -37,3 +37,21 @@ class RefreshRequest(BaseModel):
 
 class LogoutRequest(BaseModel):
     refresh_token: str
+
+
+class UserUpdate(BaseModel):
+    """Matches auth.withfbraun.com's UserUpdate - PATCH /api/auth/me body."""
+
+    first_name: str | None = None
+    last_name: str | None = None
+    avatar_url: str | None = None
+    language_code: str | None = None
+    birth_date: str | None = None
+    country_code: str | None = None
+
+
+class UserDataUpdate(BaseModel):
+    """PATCH .../me/group-attributes/{group_id} body - replaces the entire
+    user_data object, not a partial merge."""
+
+    user_data: dict | None = None
