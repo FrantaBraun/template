@@ -98,6 +98,42 @@ class AuthClient:
         r.raise_for_status()
         return r.json()
 
+    async def update_me(self, *, access_token: str, payload: dict) -> dict:
+        """PATCH /api/auth/me - updates core profile fields (UserUpdate),
+        returns the updated UserOut."""
+        self._require_api_key()
+        r = await self._http.patch(
+            "/api/auth/me", json=payload, headers={"Authorization": f"Bearer {access_token}"}
+        )
+        r.raise_for_status()
+        return r.json()
+
+    async def get_group_attributes(self, *, access_token: str, group_id: str) -> dict:
+        """{application_group_id, user_data, updated_at} - user_data only,
+        system_data is never included (hidden by the auth service itself)."""
+        self._require_api_key()
+        r = await self._http.get(
+            f"/api/auth/me/group-attributes/{group_id}",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        r.raise_for_status()
+        return r.json()
+
+    async def update_group_attributes(
+        self, *, access_token: str, group_id: str, user_data: dict
+    ) -> dict:
+        """PATCH .../group-attributes/{group_id} - replaces the ENTIRE
+        user_data object, it is not a partial merge. Callers must send the
+        full desired object, merging with the existing one themselves."""
+        self._require_api_key()
+        r = await self._http.patch(
+            f"/api/auth/me/group-attributes/{group_id}",
+            json={"user_data": user_data},
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        r.raise_for_status()
+        return r.json()
+
     async def get_public_key(self) -> str:
         self._require_api_key()
         r = await self._http.get("/api/auth/public-key")

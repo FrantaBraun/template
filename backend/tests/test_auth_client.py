@@ -1,3 +1,5 @@
+import json
+
 import httpx
 import pytest
 import respx
@@ -138,6 +140,49 @@ async def test_get_group_info(auth_test_settings):
     await client.aclose()
 
 
+@respx.mock
+async def test_update_me(auth_test_settings):
+    respx.patch("https://auth.test/api/auth/me").mock(
+        return_value=Response(200, json={"id": "u1", "first_name": "New"})
+    )
+    client = AuthClient(auth_test_settings)
+    result = await client.update_me(access_token="a", payload={"first_name": "New"})
+    assert result["first_name"] == "New"
+    await client.aclose()
+
+
+@respx.mock
+async def test_get_group_attributes(auth_test_settings):
+    respx.get("https://auth.test/api/auth/me/group-attributes/g1").mock(
+        return_value=Response(
+            200,
+            json={"application_group_id": "g1", "user_data": {"company_name": "Acme"}, "updated_at": None},
+        )
+    )
+    client = AuthClient(auth_test_settings)
+    result = await client.get_group_attributes(access_token="a", group_id="g1")
+    assert result["user_data"]["company_name"] == "Acme"
+    await client.aclose()
+
+
+@respx.mock
+async def test_update_group_attributes_sends_full_user_data(auth_test_settings):
+    route = respx.patch("https://auth.test/api/auth/me/group-attributes/g1").mock(
+        return_value=Response(
+            200,
+            json={"application_group_id": "g1", "user_data": {"company_name": "Acme"}, "updated_at": None},
+        )
+    )
+    client = AuthClient(auth_test_settings)
+    result = await client.update_group_attributes(
+        access_token="a", group_id="g1", user_data={"company_name": "Acme"}
+    )
+    assert result["user_data"]["company_name"] == "Acme"
+    sent_body = json.loads(route.calls.last.request.content)
+    assert sent_body == {"user_data": {"company_name": "Acme"}}
+    await client.aclose()
+
+
 @pytest.fixture()
 def no_key_client():
     return AuthClient(Settings(auth_url="https://auth.test", auth_api_key=""))
@@ -151,11 +196,14 @@ def no_key_client():
         lambda c: c.refresh(refresh_token="rt"),
         lambda c: c.logout(access_token="a", refresh_token="r"),
         lambda c: c.get_me(access_token="a"),
+        lambda c: c.update_me(access_token="a", payload={}),
         lambda c: c.get_public_key(),
         lambda c: c.get_group_info(),
         lambda c: c.get_consent_info(group_id="g1", access_token="a"),
         lambda c: c.grant_consent(group_id="g1", access_token="a"),
         lambda c: c.reject_consent(group_id="g1", access_token="a"),
+        lambda c: c.get_group_attributes(group_id="g1", access_token="a"),
+        lambda c: c.update_group_attributes(group_id="g1", access_token="a", user_data={}),
     ],
 )
 async def test_every_method_requires_api_key(no_key_client, call):
