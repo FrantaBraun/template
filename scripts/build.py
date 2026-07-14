@@ -160,7 +160,7 @@ def build_frontend(ref: str, output_path: Path, cfg: dict) -> None:
             z.extractall(src)
 
         with open(src / ".env", "w") as f:
-            f.write("""# Base URL of the auth service API (no trailing slash)
+            f.write(f"""# Base URL of the auth service API (no trailing slash)
 VITE_API_URL=https://template-app.withfbraun.com
 
 # Base URL of this frontend app (used for OAuth callbacks, email links)
@@ -169,7 +169,8 @@ VITE_APP_URL=https://template-app.withfbraun.com
 VITE_AUTH_URL=https://auth.withfbraun.com
 
 #API Key for the auth service API (used for server-to-server requests)
-VITE_API_KEY=e43a157e7dcb608b458de84100036ca2a999b5a110b39d9ebd9a1dad38ff4aba""")
+VITE_API_KEY={cfg.get('client_api_key')}""")
+
         print(src, src / ".env")
         print("  npm install …")
         subprocess.run([npm, "install", "--prefer-offline"], cwd=src, check=True)
