@@ -2,6 +2,7 @@
 # Author: František Braun <frantisek.braun95@gmail.com>
 # Freely available as a template for building custom applications.
 
+import json
 import logging
 from contextlib import asynccontextmanager
 
@@ -30,8 +31,10 @@ async def lifespan(app: FastAPI):
     await auth_client.aclose()
     await engine.dispose()
 
+with open('./version.json', 'r', encoding='utf-8') as f:
+    version = json.load(f)
 
-app = FastAPI(title="Template API", lifespan=lifespan)
+app = FastAPI(title="Template API", version=version['version'], lifespan=lifespan)
 
 if settings.cors_enabled:
     app.add_middleware(
