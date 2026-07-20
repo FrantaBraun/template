@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getApiUrl } from '../api/client'
 import usePageMeta from '../hooks/usePageMeta'
+import { parseMajorMinor } from '../utils/version'
 
 type VersionInfo = Record<string, unknown> & { version?: string }
 
@@ -15,13 +16,6 @@ type FetchState = {
   data: VersionInfo | null
   error: string | null
   loading: boolean
-}
-
-// Only major.minor are compared for compatibility - patch-level drift between
-// backend/frontend is expected since they release independently (see build.py).
-function parseMajorMinor(version: string | undefined) {
-  const parts = String(version ?? '').split('.')
-  return { major: parseInt(parts[0], 10) || 0, minor: parseInt(parts[1], 10) || 0 }
 }
 
 // Shared fetch/loading/error state for both the backend and frontend version.json calls below.
@@ -100,6 +94,8 @@ export default function Version() {
   const backendVersion = backend.data?.version
   const frontendVersion = frontend.data?.version
   const bothLoaded = Boolean(backendVersion && frontendVersion)
+  // Only major.minor are compared for compatibility - patch-level drift between
+  // backend/frontend is expected since they release independently (see build.py).
   const compatible =
     bothLoaded &&
     (() => {
