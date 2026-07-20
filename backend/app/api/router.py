@@ -6,9 +6,11 @@ from fastapi import APIRouter
 
 from app.api.account import router as account_router
 from app.api.auth import router as auth_router
+from app.api.public import release_news as public_release_news
 from app.api.public import version as public_version
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(public_version.router, prefix="/public", tags=["public"])
+api_router.include_router(public_release_news.router, prefix="/public", tags=["public"])
 api_router.include_router(auth_router.router, prefix="/auth", tags=["auth"])
 api_router.include_router(account_router.router, prefix="/account", tags=["account"])
