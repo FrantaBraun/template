@@ -17,10 +17,17 @@ Usage:
 Tags must follow the convention:  B-x.y.z  (backend)  /  F-x.y.z  (frontend)
 The 'scripts' target has no tag — it always bundles the current filesystem state.
 Configuration is read from scripts/build.config.toml (see build.config.toml.example).
+
+STABLE backend/frontend builds also seal that component's release_news.json:
+accumulated `unreleased` entries move into a new release dated today, tagged
+with the resolved version, and `unreleased` is cleared. This edits the local
+working-tree file only - commit it and create the release tag from that
+commit *before* running this script, or the archived build won't include it.
 """
 
 import argparse
 import ftplib
+import json
 import re
 import shutil
 import subprocess
@@ -87,6 +94,36 @@ def git_archive_bytes(ref: str, subtree: str) -> bytes:
     if proc.returncode != 0:
         sys.exit(f"git archive {ref}:{subtree} failed:\n{proc.stderr.decode().strip()}")
     return proc.stdout
+
+
+# ─── Release news ─────────────────────────────────────────────────────────────
+
+def seal_release_news(path: Path, version: str) -> None:
+    """Move a release_news.json's accumulated `unreleased` entries into a new
+    dated release entry tagged with `version`, then clear `unreleased` - a
+    no-op if there's nothing pending (running this twice for the same
+    release is therefore safe). Operates on the local working-tree file, not
+    a git ref: for the sealed entry to actually ship in the archived build,
+    commit this change and create the release tag from that commit before
+    running the archive/upload step below."""
+    if not path.exists():
+        return
+    data = json.loads(path.read_text(encoding="utf-8"))
+    unreleased = data.get("unreleased", [])
+    if not unreleased:
+        return
+
+    sealed = {
+        "version": version,
+        "release_date": datetime.now().strftime("%Y-%m-%d"),
+        "changes": unreleased,
+    }
+    data["releases"] = [sealed, *data.get("releases", [])]
+    data["unreleased"] = []
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    count = len(unreleased)
+    print(f"  Sealed {count} unreleased entr{'y' if count == 1 else 'ies'} into {path.name} as {version}")
 
 
 # ─── Build: backend ───────────────────────────────────────────────────────────
@@ -263,7 +300,9 @@ def zip_name(mode: str, target: str, ref: str) -> str:
 
 def main() -> None:
     """CLI entry point: parse args, resolve the ref/output name per target,
-    build each requested target, and upload it unless --no-upload is set."""
+    seal pending release news under the resolved version (STABLE
+    backend/frontend only), build each requested target, and upload it
+    unless --no-upload is set."""
     parser = argparse.ArgumentParser(
         description="Build and upload backend/frontend packages.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -302,6 +341,16 @@ def main() -> None:
         print(f"{'='*55}")
 
         ref = resolve_ref(args.mode, target, args.tag)
+
+        # STABLE backend/frontend builds have a real version number (ref is a
+        # "B-x.y.z"/"F-x.y.z" tag) - seal that component's accumulated
+        # unreleased entries under it before archiving. SNAPSHOT/scripts have
+        # no such version, so there's nothing meaningful to seal.
+        if args.mode == "STABLE" and target in ("backend", "frontend"):
+            version = ref.split("-", 1)[1] if "-" in ref else ref
+            news_dir = ROOT / target if target == "backend" else ROOT / "frontend" / "public"
+            seal_release_news(news_dir / "release_news.json", version)
+
         zname = zip_name(args.mode, target, ref)
         zip_path = output_dir / zname
 
