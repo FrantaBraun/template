@@ -16,6 +16,7 @@ import Login from "./pages/Login"
 import Register from "./pages/Register"
 import OAuthCallback from "./pages/OAuthCallback"
 import Version from "./pages/Version"
+import ReleaseNews from "./pages/ReleaseNews"
 
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
       <Route path="/consent-rejected" element={<ConsentRejected />} />
       {/* Publicly accessible, hidden from regular nav */}
       <Route path="/version" element={<Version />} />
+      <Route path="/release-news" element={<ReleaseNews />} />
     </Routes>
 
   </Layout>

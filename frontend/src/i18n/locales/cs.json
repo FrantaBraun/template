@@ -116,6 +116,18 @@
     "compatible": "Backend a frontend verze jsou kompatibilní ({{backend}} / {{frontend}}).",
     "mismatch": "Nesoulad verzí: backend {{backend}} vs frontend {{frontend}}. Mohou nastat problémy s kompatibilitou."
   },
+  "releaseNews": {
+    "pageTitle": "Novinky",
+    "pageDescription": "Přehled vydání backendu a frontendu.",
+    "title": "Novinky",
+    "subtitle": "Vydání backendu a frontendu vedle sebe, seskupená dle kompatibilní major.minor verze.",
+    "backend": "Backend",
+    "frontend": "Frontend",
+    "unreleased": "Nevydáno",
+    "compatible": "kompatibilní",
+    "noCompatibleRelease": "Pro tuto verzi není k dispozici žádné vydání",
+    "loadError": "Načtení novinek se nezdařilo."
+  },
   "nav": {
     "brand": "Šablona"
   }

@@ -116,6 +116,18 @@
     "compatible": "Backend and frontend versions are compatible ({{backend}} / {{frontend}}).",
     "mismatch": "Version mismatch: backend {{backend}} vs frontend {{frontend}}. Compatibility issues may occur."
   },
+  "releaseNews": {
+    "pageTitle": "Release News",
+    "pageDescription": "Backend and frontend release history.",
+    "title": "Release News",
+    "subtitle": "Backend and frontend releases side by side, grouped by compatible major.minor version.",
+    "backend": "Backend",
+    "frontend": "Frontend",
+    "unreleased": "Unreleased",
+    "compatible": "compatible",
+    "noCompatibleRelease": "No release available for this version",
+    "loadError": "Failed to load release news."
+  },
   "nav": {
     "brand": "Template"
   }
