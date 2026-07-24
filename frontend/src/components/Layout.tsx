@@ -38,8 +38,10 @@ function Nav() {
   return (
     <header className="border-b border-slate-800 bg-slate-950">
       <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-3 text-sm text-slate-300">
-        <Link to="/" className="font-semibold tracking-tight text-slate-100">
-          {t('nav.brand')}
+        <Link to="/" className="tracking-tight text-stone-200 hover:text-stone-300 flex">
+          <img src="/logo.png" alt="" className="mx-1 bg-slate-200 rounded" width={40} />
+          <span className='font-extrabold'>{t('nav.brand')}</span>
+          <span className='ms-1 text-stone-400 text-xs pt-4' style={{marginLeft: "-15px"}}>WFB</span>
         </Link>
 
         <nav className="flex items-center gap-4">
